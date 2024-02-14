@@ -35,10 +35,10 @@ model_explorer <- function(data,
   }
 
   # Filter non-NULL variable names
-  var_names <- all_vars[!is.null(all_vars)]
-
-  # Substitute user-specified variable names 
-  data <- rename(data, setNames(var_names, var_names))
+   var_names <- c(y_var, x1_var, x2_var, x3_var, x4_var, x5_var)[!is.null(c(y_var, x1_var, x2_var, x3_var, x4_var, x5_var))]
+  
+   # Substitute user-specified variable names 
+   data <- rename(data, setNames(var_names, var_names))
 
   # Filter predictor names (redundant since renaming won't leave NULLs)
   predictor_names <- var_names[!is.null(var_names) & var_names != y_var]
@@ -48,16 +48,16 @@ model_explorer <- function(data,
                           predictors = character(),
                           p_values = numeric())
 
-  # Iterate through combinations and fit models
-  for (i in 1:length(predictor_names)) {
-    combos <- combn(predictor_names, i, simplify = FALSE)
+  # Build Formula Strings - NEW APPROACH
+   for (i in 1:length(var_names)) {
+      combos <- combn(var_names, i, simplify = FALSE)
 
-    for (combo in combos) {
-      formula_str <- paste0("y ~ ", paste(combo, collapse = " + "))
-      formula_str <- paste(formula_str, " + ", paste0(combo, ":", combo, collapse = " + "))
+      for (combo in combos) {
+        formula_text <- paste0(y_var, " ~ ", paste(combo, collapse = " + "))
+        formula_text <- paste(formula_text, " + ", paste0(combo, ":", combo, collapse = " + "))
+        formula_str <- as.formula(formula_text) 
 
-      model <- lm(as.formula(formula_str), data = data)
-
+        model <- lm(formula_str, data = data)
       # Extract significant predictors and p-values
       summary_data <- summary(model)$coefficients[rowSums(summary(model)$coefficients[, 4] < p_value_threshold) > 0,]
 
