@@ -24,21 +24,24 @@
 #'
 #' @export
 #'
-model_explorer <- function(data, y_var, x1_var, x2_var, x3_var = NULL, x4_var = NULL, x5_var = NULL,
+model_explorer <- function(data, 
+                           y_var, x1_var, x2_var, x3_var = NULL, x4_var = NULL, x5_var = NULL,
                            p_value_threshold = 0.05) {
 
-  # Ensure valid column names
+  # Ensure valid column names 
   all_vars <- c(y_var, x1_var, x2_var, x3_var, x4_var, x5_var)
   if (!all(all_vars %in% names(data))) {
     stop("One or more variables not found in the dataset.")
   }
 
-  # Substitute user-specified variable names
-  data <- rename(data, !!y_var := y, !!x1_var := x1, !!x2_var := x2,
-                 !!x3_var := x3, !!x4_var := x4, !!x5_var := x5)
+  # Filter non-NULL variable names
+  var_names <- all_vars[!is.null(all_vars)]
 
-  # Filter predictor names
-  predictor_names <- all_vars[!is.null(all_vars) & all_vars != y_var]
+  # Substitute user-specified variable names 
+  data <- rename(data, setNames(var_names, var_names))
+
+  # Filter predictor names (redundant since renaming won't leave NULLs)
+  predictor_names <- var_names[!is.null(var_names) & var_names != y_var]
 
   # Create output data frame
   output_df <- data.frame(model = character(),
