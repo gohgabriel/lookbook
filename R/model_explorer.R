@@ -27,56 +27,71 @@
 model_explorer <- function(data, 
                            y_var, x1_var, x2_var, x3_var = NULL, x4_var = NULL, x5_var = NULL,
                            p_value_threshold = 0.05) {
-
+  
   # Ensure valid column names 
   all_vars <- c(y_var, x1_var, x2_var, x3_var, x4_var, x5_var)
   if (!all(all_vars %in% names(data))) {
     stop("One or more variables not found in the dataset.")
   }
-
-  # Filter non-NULL variable names
-   var_names <- c(y_var, x1_var, x2_var, x3_var, x4_var, x5_var)[!is.null(c(y_var, x1_var, x2_var, x3_var, x4_var, x5_var))]
   
-   # Substitute user-specified variable names 
-   data <- rename(data, setNames(var_names, var_names))
-
+  # Filter non-NULL variable names
+  var_names <- c(y_var, x1_var, x2_var, x3_var, x4_var, x5_var)[!is.null(c(y_var, x1_var, x2_var, x3_var, x4_var, x5_var))]
+  
+  # Substitute user-specified variable names 
+  data <- rename(data, setNames(var_names, var_names))
+  
   # Filter predictor names (redundant since renaming won't leave NULLs)
   predictor_names <- var_names[!is.null(var_names) & var_names != y_var]
-
-  # Create output data frame
-  output_df <- data.frame(model = character(),
-                          predictors = character(),
-                          p_values = numeric())
-
-  # Build Formula Strings - NEW APPROACH
-   for (i in 1:length(var_names)) {
-      combos <- combn(var_names, i, simplify = FALSE)
-
-      # Exclude combos with only the y_var 
-      combos <- combos[sapply(combos, function(x) !all(x == y_var))]
-     
-      for (combo in combos) {
-        formula_text <- paste0(y_var, " ~ ", paste(combo, collapse = " + "))
+  
+  # Create an empty list to store output 
+  output_list <- list() 
+  
+  # Build Formula Strings
+  predictor_names <- var_names[!var_names %in% y_var] # Isolate only the predictors 
+  
+  for (i in 1:length(predictor_names)) {
+    combos <- combn(predictor_names, i, simplify = FALSE) 
+    
+    for (combo in combos) {
+      formula_text <- paste0(y_var, " ~ ", paste(combo, collapse = " + ")) 
+      
+      # Only create interactions if there are multiple distinct predictors included 
+      if (length(unique(combo)) > 1) { 
         formula_text <- paste(formula_text, " + ", paste0(combo, ":", combo, collapse = " + "))
-        formula_str <- as.formula(formula_text) 
+      }
+      
+      formula_str <- as.formula(formula_text) 
+      
+      model <- lm(formula_str, data = data) 
+      
+      print(summary(model))
+      
+      # Extract significant predictors and p-values (Example threshold at p < 0.05)
+      if (is.null(summary(model)$coefficients) || 
+          ncol(summary(model)$coefficients) >= 4 ||
+          nrow(summary(model)$coefficients) == 1) { 
+        summary_data <- summary(model)$coefficients[summary(model)$coefficients[, 4] < p_value_threshold, ] 
 
-        model <- lm(formula_str, data = data)
-        
-# Extract significant predictors and p-values (Example threshold at p < 0.05)
-if (ncol(summary(model)$coefficients) >= 4) {  # Check if p-values exist
-  summary_data <- summary(model)$coefficients[rowSums(summary(model)$coefficients[, 4] < p_value_threshold) > 0,] 
-} else {
-  summary_data <- NULL  # Handle when no predictors are significant
-}
-
-# Store results
-if (!is.null(summary_data)) { # Store only if predictors were significant 
-  output_df <- rbind(output_df, data.frame(model = as.character(formula(model)),
-                                             predictors = list(rownames(summary_data)),
-                                             p_values = list(summary_data[, "Pr(>|t|)"])))
-}
+      } else {
+        summary_data <- NULL 
+      }
+      
+      # Store results (with conditional check)
+      if (!is.null(summary_data) && nrow(summary_data) > 0) { 
+        output_list[[length(output_list) + 1]] <- list(model = as.character(formula(model)),
+                                                       predictors = as.character(rownames(summary_data)),
+                                                       p_values = summary_data[, "Pr(>|t|)"])
+      }
+      } 
     }
-  }
+  
 
+  # Check if any models were significant
+  if (length(output_list) == 0) {
+    message("No significant predictors found") 
+  } else {
+    output_df <- do.call(rbind, output_list) # Convert  list to  dataframe 
+  }
+  
   return(output_df)
 }
