@@ -58,15 +58,20 @@ model_explorer <- function(data,
         formula_str <- as.formula(formula_text) 
 
         model <- lm(formula_str, data = data)
-      # Extract significant predictors and p-values
-      summary_data <- summary(model)$coefficients[rowSums(summary(model)$coefficients[, 4] < p_value_threshold) > 0,]
+        
+# Extract significant predictors and p-values (Example threshold at p < 0.05)
+if (ncol(summary(model)$coefficients) >= 4) {  # Check if p-values exist
+  summary_data <- summary(model)$coefficients[rowSums(summary(model)$coefficients[, 4] < p_value_threshold) > 0,] 
+} else {
+  summary_data <- NULL  # Handle when no predictors are significant
+}
 
-      # Store results
-      if (nrow(summary_data) > 0) {
-        output_df <- rbind(output_df, data.frame(model = as.character(formula(model)),
-                                                 predictors = list(rownames(summary_data)), # Nested list
-                                                 p_values = list(summary_data[, "Pr(>|t|)"])))
-      }
+# Store results
+if (!is.null(summary_data)) { # Store only if predictors were significant 
+  output_df <- rbind(output_df, data.frame(model = as.character(formula(model)),
+                                             predictors = list(rownames(summary_data)),
+                                             p_values = list(summary_data[, "Pr(>|t|)"])))
+}
     }
   }
 
