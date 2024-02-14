@@ -24,8 +24,12 @@
 #'
 #'@export
 #'
+<<<<<<< HEAD
 model_explorer <- function(data,
                            y_var, x1_var, x2_var, x3_var = NULL, x4_var = NULL, x5_var = NULL,
+=======
+model_explorer <- function(data, y, x1, x2, x3 = NULL, x4 = NULL, x5 = NULL,
+>>>>>>> 15910350294c02d0893b303853aea7d33ab63b83
                            p_value_threshold = 0.05) {
 
   # Ensure valid column names
