@@ -53,7 +53,7 @@ model_explorer <- function(data,
       combos <- combn(var_names, i, simplify = FALSE)
 
       # Exclude combos with only the y_var 
-      combos <- combos[lapply(combos, function(x) !all(x == y_var))]
+      combos <- combos[sapply(combos, function(x) !all(x == y_var))]
      
       for (combo in combos) {
         formula_text <- paste0(y_var, " ~ ", paste(combo, collapse = " + "))
