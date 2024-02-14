@@ -22,6 +22,8 @@
 #'                          x1 = "predictor1", x2 = "predictor2", x3 = "predictor3")
 #' print(result)
 #'
+#'@export
+#'
 model_explorer <- function(data, y, x1, x2, x3 = NULL, x4 = NULL, x5 = NULL,
                            p_value_threshold = 0.05) {
 
