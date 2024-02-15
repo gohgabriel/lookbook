@@ -1,31 +1,3 @@
-#' Model Explorer
-#'
-#' This function systematically explores various linear models using a given dataset
-#' to reveal significant predictors and interactions.
-#'
-#' @param data A data frame containing the variables to be used in the models.
-#' @param y_var A string indicating the name of the dependent (outcome) variable.
-#' @param x1_var A string indicating the name of the first independent variable.
-#' @param x2_var A string indicating the name of the second independent variable.
-#' @param x3_var  An optional string indicating the name of the third independent variable.
-#' @param x4_var  An optional string indicating the name of the fourth independent variable.
-#' @param x5_var  An optional string indicating the name of the fifth independent variable.
-#' @param p_value_threshold A numeric value specifying the significance threshold for p-values.
-#'                          Defaults to 0.05.
-#'
-#' @return A data frame containing significant models:
-#'   \itemize{
-#'   \item{model:} The model formula as a string.
-#'   \item{significant_predictors:} Character vector of significant predictor names.
-#'   \item{p_values:} Numeric vector of p-values for significant predictors.
-#'   }
-#'   If no significant predictors are found, a message is printed.
-#'
-#' @examples
-#' # Assuming sample data called 'my_data' with variables
-#' #  'outcome', 'pred1', 'pred2'
-#' model_explorer(data = my_data, y_var = "outcome", x1_var = "pred1", x2_var = "pred2")
-#'
 #' @export
 
 model_explorer <- function(data,

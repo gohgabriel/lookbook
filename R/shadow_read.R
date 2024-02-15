@@ -1,21 +1,5 @@
-#' @title Analyze Sensitivity Analysis Output
-#' @description Calculates observation inclusion/exclusion frequencies from the results of a sensitivity analysis from the `ten_shadows` function.
-#' @param results Output list from a sensitivity analysis function.
-#' @param top_n Optional. An integer controlling the number of top excluded/included observations to report. Defaults to 10% of the observations in the original dataset.
-#' @return A list containing:
-#' \itemize{
-#'   \item excluded_frequencies: A list of exclusion frequency vectors for each shadow dataset.
-#'   \item included_frequencies: A list of inclusion frequency vectors for each shadow dataset.
-#'   \item total_excluded: Total exclusion frequencies across all datasets.
-#'   \item total_included: Total inclusion frequencies across all datasets.
-#'   \item top_excluded_obs: IDs of the top excluded observations.
-#'   \item top_included_obs: IDs of the top included observations.
-#'   \item top_excluded_df: Data frame containing rows for the top excluded observations.
-#'   \item top_included_df: Data frame containing rows for the top included observations.
-#' }
+
 #' @export
-#'
-#'
 
 shadow_read <- function(results, top_n = NULL) {
 
