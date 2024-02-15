@@ -14,7 +14,7 @@
 #'   included within `predictors` or `controls`.
 #' @param num_obs_remove An integer (optional) specifying the number of observations to remove
 #'   in each iteration. If not provided, 10% of observations will be removed.
-#' @param num_iterations An integer specifying the number of model iterations to perform.
+#' @param num_iterations An integer specifying the number of moldel iterations to perform.
 #'   Defaults to 10.
 #' @param p_value_threshold A numeric value indicating the significance threshold for
 #'   determining a "significant" shadow dataset. Defaults to 0.05.

@@ -32,7 +32,7 @@ included within `predictors` or `controls`.}
 \item{num_obs_remove}{An integer (optional) specifying the number of observations to remove
 in each iteration. If not provided, 10% of observations will be removed.}
 
-\item{num_iterations}{An integer specifying the number of model iterations to perform.
+\item{num_iterations}{An integer specifying the number of moldel iterations to perform.
 Defaults to 10.}
 
 \item{p_value_threshold}{A numeric value indicating the significance threshold for

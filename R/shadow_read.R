@@ -13,7 +13,6 @@
 #'   \item top_excluded_df: Data frame containing rows for the top excluded observations.
 #'   \item top_included_df: Data frame containing rows for the top included observations.
 #' }
-#' @importFrom dplyr %>%
 #' @export
 #'
 #'
