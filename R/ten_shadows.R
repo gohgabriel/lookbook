@@ -54,14 +54,17 @@ ten_shadows <- function(dataset,
 
   significant_shadows <- list()
 
+  original_shadow <- dataset %>%  # You might need 'library(dplyr)' for this
+    mutate(obs_id = row_number())
+
   for (i in 1:num_iterations) {
 
     # Calculate 10% to remove, ensuring at least 1 observation
     if (is.null(num_obs_remove)) {
-      num_obs_remove <- max(1, round(0.10 * nrow(dataset)))
+      num_obs_remove <- max(1, round(0.10 * nrow(original_shadow)))
     }
 
-    shadow_data <- dataset[sample(nrow(dataset), nrow(dataset) - num_obs_remove), ]
+    shadow_data <- original_shadow[sample(nrow(original_shadow), nrow(original_shadow) - num_obs_remove), ]
 
     # Build the base model formula
     model_formula <- as.formula(paste(outcome, "~", paste(predictors, collapse = " + ")))
@@ -102,6 +105,7 @@ ten_shadows <- function(dataset,
     } else {
       if (all(summary(model)$coefficients[predictors, 4] < p_value_threshold)) { # Check all predictors
         significant_shadows[[paste0("shadow_", i)]] <- list(dataset = shadow_data,
+                                                            original_shadow = original_shadow,
                                                             model_summary = summary(model))
       }
     }
@@ -118,3 +122,5 @@ ten_shadows <- function(dataset,
     return(significant_shadows)
   }
 }
+
+
