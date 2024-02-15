@@ -7,7 +7,7 @@ Lookbook is a R library with various R functions designed to explore patterns in
 It currently has the following functions:
 * model_explorer
 * ten_shadows
-** shadow_read
+* shadow_read
 
 # Installation
 
