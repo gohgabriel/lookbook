@@ -62,9 +62,11 @@ result <- model_explorer(data = mtcars, y_var = "mpg",
 print(result)
 ```
 
-## Sensitivity Analysis with Randomized Subsets (Shadow Sensitivity Analysis)
+## Sensitivity Analysis with Randomized Subsets (Shadow Iterations)
 
-The ten_shadows function performs sensitivity analysis within a linear regression framework. It helps gauge the robustness of your model by repeatedly fitting it on random subsets of the data and checking if the original predictors (or interactions) remain statistically significant. The function is capable of incorporating two-way interaction terms, and also can be set to focus on the significance of the interaction term rather than on the indicated predictors.
+Suppose that you've identified some relationships between your data using model explorer. Yet, given the large number of tests you are performing, there is a good chance that the relationships you have identified are spurrious. It would be particularly helpful to know how robust a particular finding with sensitivity analyses.
+
+The ten_shadows function, based on the shadow iteration technique, performs sensitivity analysis within a linear regression framework. It helps gauge the robustness of your model by repeatedly fitting it on random subsets of the data and checking if the original predictors (or interactions) remain statistically significant. The function is capable of incorporating two-way interaction terms, and also can be set to focus on the significance of the interaction term rather than on the indicated predictors.
 
 A good rule of thumb is that for the default ten iterations, predictors (or interactions) should be significant across 100% of them. A paper detailing the methods of the function, relative to other sensitivity analyses, is forthcoming.
 
