@@ -54,7 +54,7 @@ ten_shadows <- function(dataset,
     # Significance checking logic
     if (check_interaction) {
       if (!is.null(interactions)) {
-        if (any(summary(model)$coefficients[interactions, 4] < p_value_threshold)) { # Check interaction p-values
+        if (all(summary(model)$coefficients[interactions, 4] < p_value_threshold)) { # Check interaction p-values
           significant_shadows[[paste0("shadow_", i)]] <- list(dataset = shadow_data,
                                                               original_shadow = original_shadow,
                                                               model_summary = summary(model))
