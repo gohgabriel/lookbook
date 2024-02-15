@@ -5,7 +5,6 @@ Version: 0.1.1
 Author: gohgabriel
 Maintainer: gohgabriel <gabriel.g@u.nus.edu>
 Description: Lookbook is a library with functions designed to help you explore relationships between variables in your dataset.
-    Use four spaces when indenting paragraphs within the Description.
 License: MIT
 Encoding: UTF-8
 LazyData: true
