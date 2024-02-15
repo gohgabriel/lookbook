@@ -6,45 +6,49 @@
 \usage{
 model_explorer(
   data,
-  y,
-  x1,
-  x2,
-  x3 = NULL,
-  x4 = NULL,
-  x5 = NULL,
+  y_var,
+  x1_var,
+  x2_var,
+  x3_var = NULL,
+  x4_var = NULL,
+  x5_var = NULL,
   p_value_threshold = 0.05
 )
 }
 \arguments{
-\item{data}{A data frame containing the variables.}
+\item{data}{A data frame containing the variables to be used in the models.}
 
-\item{y}{The name of the target variable (as a string).}
+\item{y_var}{A string indicating the name of the dependent (outcome) variable.}
 
-\item{x1}{The name of the first predictor variable (as a string).}
+\item{x1_var}{A string indicating the name of the first independent variable.}
 
-\item{x2}{The name of the second predictor variable (as a string).}
+\item{x2_var}{A string indicating the name of the second independent variable.}
 
-\item{x3}{The name of the third predictor variable (as a string), optional.}
+\item{x3_var}{An optional string indicating the name of the third independent variable.}
 
-\item{x4}{The name of the fourth predictor variable (as a string), optional.}
+\item{x4_var}{An optional string indicating the name of the fourth independent variable.}
 
-\item{x5}{The name of the fifth predictor variable (as a string), optional.}
+\item{x5_var}{An optional string indicating the name of the fifth independent variable.}
 
-\item{p_value_threshold}{The p-value threshold for determining statistical significance (default = 0.05).}
+\item{p_value_threshold}{A numeric value specifying the significance threshold for p-values.
+Defaults to 0.05.}
 }
 \value{
-A data frame containing the following columns:
-  - model: The model formula.
-  - predictors: A list of statistically significant predictors in the model.
-  - p_values: A list of corresponding p-values for the predictors.
+A data frame containing significant models:
+  \itemize{
+  \item{model:} The model formula as a string.
+  \item{significant_predictors:} Character vector of significant predictor names.
+  \item{p_values:} Numeric vector of p-values for significant predictors.
+  }
+  If no significant predictors are found, a message is printed.
 }
 \description{
-Explores potential linear regression models using different combinations of predictor variables.
+This function systematically explores various linear models using a given dataset
+to reveal significant predictors and interactions.
 }
 \examples{
-# Assuming a dataset named 'my_data' with appropriate columns
-result <- model_explorer(data = my_data, y = "target_column",
-                         x1 = "predictor1", x2 = "predictor2", x3 = "predictor3")
-print(result)
+# Assuming sample data called 'my_data' with variables
+#  'outcome', 'pred1', 'pred2'
+model_explorer(data = my_data, y_var = "outcome", x1_var = "pred1", x2_var = "pred2")
 
 }
