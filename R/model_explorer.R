@@ -46,25 +46,34 @@ model_explorer <- function(data,
   # Create an empty list to store output 
   output_list <- list() 
   
-  # Build Formula Strings
-  predictor_names <- var_names[!var_names %in% y_var] # Isolate only the predictors 
-  
-  for (i in 1:length(predictor_names)) {
-    combos <- combn(predictor_names, i, simplify = FALSE) 
-    
-    for (combo in combos) {
-      formula_text <- paste0(y_var, " ~ ", paste(combo, collapse = " + ")) 
-      
-      # Only create interactions if there are multiple distinct predictors included 
-      if (length(unique(combo)) > 1) { 
-        formula_text <- paste(formula_text, " + ", paste0(combo, ":", combo, collapse = " + "))
-      }
-      
-      formula_str <- as.formula(formula_text) 
-      
-      model <- lm(formula_str, data = data) 
-      
-      print(summary(model))
+  # Build Formula Strings (Modified)
+predictor_names <- var_names[!var_names %in% y_var] 
+
+# 2. Two-way interactions 
+interactions <- combn(predictor_names, 2, FUN = function(x) paste(x, collapse = ":"))
+
+# 3. Create formulae using combn
+all_combinations <- combn(c(predictor_names, interactions), m = 1:length(c(predictor_names, interactions)), simplify = FALSE)
+
+formula_list <- lapply(all_combinations, function(combo) {
+     paste0(y_var, " ~ ", paste(combo, collapse = " + "))
+})
+
+# 4. Filter for valid hierarchical models
+formula_list <- formula_list[sapply(formula_list, function(f) {
+  terms <- all.vars(f)
+  interactions <- terms[grepl(":", terms)]
+  if (length(interactions) == 0) return(TRUE) # No interactions 
+  all(sapply(interactions, function(int_term) {
+    all(strsplit(int_term, ":")[[1]] %in% terms) 
+  }))
+})]
+
+      for (combo in combos) { 
+  formula_str <- as.formula(formula_list[[length(formula_list)]]) # Assign from formula_list
+
+  model <- lm(formula_str, data = data)  
+  print(summary(model))
       
       # Extract significant predictors and p-values (Example threshold at p < 0.05)
       if (is.null(summary(model)$coefficients) || 
