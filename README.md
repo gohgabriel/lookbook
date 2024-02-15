@@ -18,21 +18,23 @@ devtools::install_github("gohgabriel/lookbook")
 
 ## Model Explorer
 
-The model_explorer function facilitates exploring linear regression models to identify statistically significant predictors within a dataset, from two to five predictors. It will also automatically explore two-way interaction terms.
+Model explorer facilitates a structured approach to investigating the relationship between a dependent variable and multiple independent variables within a dataset. It systematically generates and evaluates various linear models, aiding in the discovery of significant predictors and their interactions.
 
 ### Usage
 
 ```
-result <- model_explorer(data = my_data, y = "target_column", 
-                         x1 = "predictor1", x2 = "predictor2", x3 = "predictor3")
-print(result) 
+# Assuming 'my_data' is your dataset, with variables  
+# 'outcome', 'pred1', 'pred2', ... 
+result <- model_explorer(data = my_data, y_var = "outcome", x1_var = "pred1", x2_var = "pred2") 
+
+print(result)
 ```
 
 ### Parameters
 
 * data: A data frame containing the variables.
-* y: The name of the target variable (as a string).
-* x1, x2, ... (up to x5): The names of predictor variables (as strings).
+* y_var: The name of the target variable (as a string).
+* x1_var, x2_var, ... (up to x5_var): The names of predictor variables (as strings).
 * p_value_threshold (optional): The p-value threshold for statistical significance (default = 0.05).
 
 ### Output
@@ -41,7 +43,7 @@ The function returns a data frame with the following columns:
 
 ```
     model: The model formula.
-    predictors: A list of statistically significant predictors.
+    significant_predictors: A list of statistically significant predictors.
     p_values: A list of corresponding p-values.
 ```
 
@@ -50,8 +52,8 @@ The function returns a data frame with the following columns:
 ```
 library(datasets)  # Use the built-in 'mtcars' dataset
 
-result <- model_explorer(data = mtcars, y = "mpg", 
-                         x1 = "cyl", x2 = "disp", x3 = "hp")
+result <- model_explorer(data = mtcars, y_var = "mpg", 
+                         x1_var = "cyl", x2_var = "disp", x3_var = "hp")
 print(result)
 ```
 
