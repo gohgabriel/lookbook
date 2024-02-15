@@ -2,7 +2,7 @@ README.md
 
 # Lookbook
 
-Lookbook is a R library with various R functions designed to explore patterns in your datasets.
+Lookbook is a R package with various R functions designed to explore patterns in your datasets.
 
 It currently has the following functions:
 * model_explorer
