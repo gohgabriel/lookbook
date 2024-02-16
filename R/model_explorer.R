@@ -72,7 +72,7 @@ model_explorer <- function(data,
     }
 
       # Store results 
-      if (!exists("summary_data")) == 0) { 
+      if (!exists("summary_data") || nrow(summary_data) == 0) { 
         # Skip this model iteration
       } else { 
         # Process significant predictors.
