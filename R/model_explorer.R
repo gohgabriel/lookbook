@@ -63,25 +63,25 @@ for (formula_str_index in 1:length(formula_list)) {
 
   # Check for typical model output
   if (is_typical_model_output(model)) {  # We'll define this function next
-
-    # Extract significant predictors and p-values 
-    if (is.null(summary(model)$coefficients) ||
-        ncol(summary(model)$coefficients) >= 4 ||
-        nrow(summary(model)$coefficients) == 1) {
-    
-      # Changes here:
-      summary_coefficients <- summary(model)$coefficients 
-      summary_data <- summary_coefficients[summary_coefficients[, 4] < p_value_threshold, , drop = FALSE] # Include drop = FALSE
-    
-    } else {
-      summary_data <- NULL
-    } 
+      
+      # Extract significant predictors and p-values 
+      if (is.null(summary(model)$coefficients) ||
+          ncol(summary(model)$coefficients) >= 4 ||
+          nrow(summary(model)$coefficients) == 1) {
+      
+        summary_coefficients <- summary(model)$coefficients 
+        significant_rows <- (summary_coefficients[, 4] < p_value_threshold) & (rownames(summary_coefficients) != "(Intercept)")
+        summary_data <- summary_coefficients[significant_rows, , drop = FALSE] 
+      
+      } else {
+        summary_data <- NULL
+      } 
 
     # Store results (We no longer need error handling here)
     
-    output_list[[length(output_list) + 1]] <- list(model = formula_str,
-                                                   significant_predictors = as.character(rownames(summary_data)),
-                                                   p_values = summary_data[, "Pr(>|t|)"]) 
+      output_list[[length(output_list) + 1]] <- list(model = formula_str,
+                                                     significant_predictor = as.character(rownames(summary_data)),
+                                                     p_values = round(summary_data[, "Pr(>|t|)"], 3))  # Change here
 
   } else { 
     # Skip iteration (model output was atypical) 
