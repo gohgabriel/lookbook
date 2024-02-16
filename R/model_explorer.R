@@ -48,7 +48,6 @@ model_explorer <- function(data,
 
   # Flatten the list of combinations
   predictor_combinations <- unlist(predictor_combinations, recursive = FALSE)
-  print(predictor_combinations)
 
   # Generate formulae from filtered combinations (This block now executes only if combinations exist)
   formula_list <- lapply(predictor_combinations, function(combo) {
@@ -72,13 +71,15 @@ model_explorer <- function(data,
       summary_data <- NULL
     }
 
-    # Store results (with conditional check)
-    if (!is.null(summary_data) && nrow(summary_data) > 0) {
-      output_list[[length(output_list) + 1]] <- list(model = formula_str,
-                                                     significant_predictors = as.character(rownames(summary_data)),
-                                                     p_values = summary_data[, "Pr(>|t|)"])
+  # Store results (with error handling)
+  if (!is.null(summary_data) && nrow(summary_data) > 0) {
+    output_list[[length(output_list) + 1]] <- list(model = formula_str,
+                                                   significant_predictors = as.character(rownames(summary_data)),
+                                                   p_values = summary_data[, "Pr(>|t|)"]) 
 
-    }
+  } else {  # Add this section to handle possible NULL
+    print(paste0("Model with formula '", formula_str, "' did not produce significant predictors."))
+  } 
   }
 
 
