@@ -79,7 +79,7 @@ for (formula_str_index in 1:length(formula_list)) {
 
     # Store results
     
-        if (!is.null(summary_data)) { 
+        if (!is.null(summary_data) && nrow(summary_data) > 0) { 
                         p_values <- round(summary_data[, "Pr(>|t|)"], 3)
                         p_values[p_values == 0] <- 0.001 
                         output_list[[length(output_list) + 1]] <- list(model = formula_str,
