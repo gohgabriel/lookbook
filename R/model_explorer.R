@@ -68,14 +68,17 @@ for (formula_str_index in 1:length(formula_list)) {
     if (is.null(summary(model)$coefficients) ||
         ncol(summary(model)$coefficients) >= 4 ||
         nrow(summary(model)$coefficients) == 1) {
-      summary_data <- summary(model)$coefficients[summary(model)$coefficients[, 4] < p_value_threshold, ]
+    
+      # Changes here:
+      summary_coefficients <- summary(model)$coefficients 
+      summary_data <- summary_coefficients[summary_coefficients[, 4] < p_value_threshold, , drop = FALSE] # Include drop = FALSE
+    
     } else {
       summary_data <- NULL
     } 
 
     # Store results (We no longer need error handling here)
-
-    print(summary_data)
+    
     output_list[[length(output_list) + 1]] <- list(model = formula_str,
                                                    significant_predictors = as.character(rownames(summary_data)),
                                                    p_values = summary_data[, "Pr(>|t|)"]) 
