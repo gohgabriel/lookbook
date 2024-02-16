@@ -71,14 +71,15 @@ model_explorer <- function(data,
       summary_data <- NULL
     }
 
-  # Store results (with error handling)
-  if (is.null(summary_data) || nrow(summary_data) == 0) { 
-  # Skip, no significant predictors for this model
-    } else { 
-    output_list[[length(output_list) + 1]] <- list(model = formula_str,
-                                                 significant_predictors = as.character(rownames(summary_data)),
-                                                 p_values = summary_data[, "Pr(>|t|)"]) 
-    } 
+      # Store results 
+      if (!exists("summary_data")) == 0) { 
+        # Skip this model iteration
+      } else { 
+        # Process significant predictors.
+        output_list[[length(output_list) + 1]] <- list(model = formula_str,
+                                                       significant_predictors = as.character(rownames(summary_data)),
+                                                       p_values = summary_data[, "Pr(>|t|)"]) 
+      }
 }
 
 
