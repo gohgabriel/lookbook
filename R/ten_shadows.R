@@ -126,7 +126,7 @@ ten_shadows <- function(dataset,
 
       # Print rows
       for (i in 1:nrow(output_data)) {
-        cat(sprintf("%-20s %-20s %-20s %-20s\n", output_data[i,]))
+        cat(sprintf("%-20s %-20s %-20s %-20s\n", output_data[i, 1], output_data[i, 2], output_data[i, 3], output_data[i, 4])) 
       }
     }
 
