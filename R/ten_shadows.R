@@ -57,7 +57,8 @@ ten_shadows <- function(dataset,
         if (all(summary(model)$coefficients[interactions, 4] < p_value_threshold)) { # Check interaction p-values
           significant_shadows[[paste0("shadow_", i)]] <- list(dataset = shadow_data,
                                                               original_shadow = original_shadow,
-                                                              model_summary = summary(model))
+                                                              model_summary = summary(model),
+                                                              coefficients = coef(model)[interactions])
         }
       } else {
         warning("Cannot check interaction significance when no interactions are specified.")
@@ -66,7 +67,8 @@ ten_shadows <- function(dataset,
       if (all(summary(model)$coefficients[predictors, 4] < p_value_threshold)) { # Check all predictors
         significant_shadows[[paste0("shadow_", i)]] <- list(dataset = shadow_data,
                                                             original_shadow = original_shadow,
-                                                            model_summary = summary(model))
+                                                            model_summary = summary(model),
+                                                            coefficients = coef(model)[predictors])
       }
     }
   }
@@ -75,11 +77,56 @@ ten_shadows <- function(dataset,
   num_significant <- length(significant_shadows)
   percent_significant <- (num_significant / num_iterations) * 100
 
+  # Average Coefficients Calculation (Simplified)
+  if (num_significant > 0) {
+    if (check_interaction) {
+      # We trust the coefficient logic already filters coefficients from significant interactions
+      if (!is.null(interactions)) {
+        all_coefficients <- do.call(rbind, lapply(significant_shadows, function(x) x$coefficients))
+        average_coefficients <- colMeans(all_coefficients)
+        lowest_coefficients <- apply(all_coefficients, 2, min)  # Column-wise minimums
+        highest_coefficients <- apply(all_coefficients, 2, max) # Column-wise maximums
+        names(average_coefficients) <- interactions
+        names(lowest_coefficients) <- interactions
+        names(highest_coefficients) <- interactions
+      } else {
+        average_coefficients <- NULL
+        lowest_coefficients <- NULL
+        highest_coefficients <- NULL
+        message("Error: We should in theory never reach this stage. Please contact the author.")
+      }
+    } else {
+      # We trust the coefficient logic already filters coefficients of significant predictors
+      all_coefficients <- do.call(rbind, lapply(significant_shadows, function(x) x$coefficients))
+      average_coefficients <- colMeans(all_coefficients)
+      lowest_coefficients <- apply(all_coefficients, 2, min)  # Column-wise minimums
+      highest_coefficients <- apply(all_coefficients, 2, max) # Column-wise maximums
+      names(average_coefficients) <- predictors
+      names(lowest_coefficients) <- predictors
+      names(highest_coefficients) <- predictors
+    }
+  }
+
+
   if (length(significant_shadows) == 0) {
     message("Error: The indicated predictor(s) (or interactions) were not significant after ", num_iterations, " iterations.")
   } else {
     message("Out of ", num_iterations, " iterations, ", percent_significant, "% resulted in significant shadow datasets.")
-    return(significant_shadows)
+
+    # Simplified Coefficient Summary Messages
+    if (!is.null(average_coefficients)) {
+      for (var_name in names(average_coefficients)) {
+        message("For variable  '", var_name, "':",
+                "  Average Coefficient: ", average_coefficients[var_name],
+                "  Lowest Coefficient: ", lowest_coefficients[var_name],
+                "  Highest Coefficient: ", highest_coefficients[var_name])
+      }
+    }
+
+    return(list(significant_shadows = significant_shadows,
+                average_coefficients = average_coefficients,
+                lowest_coefficients = lowest_coefficients,
+                highest_coefficients = highest_coefficients))
   }
 }
 
