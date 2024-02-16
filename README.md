@@ -23,7 +23,9 @@ devtools::install_github("gohgabriel/lookbook")
 
 ## Model Explorer
 
-Model explorer facilitates a structured approach to investigating the relationship between a dependent variable and multiple independent variables within a dataset. It systematically generates and evaluates various linear models, aiding in the discovery of significant predictors and their interactions.
+Model explorer facilitates a structured approach to investigating the relationship between a dependent variable and multiple independent variables within a dataset. It systematically generates and evaluates various linear models, aiding in the discovery of significant predictors and their interactions. The function will also automatically include and iterate through all possible two-way interactions between specified variables in the model building process.
+
+The output is a matrix with models that have at least one significant predictor (excluding the intercept), together with the significant predictors, p-values, and model r-squared. It optionally has the function to sort the matrix by r-squared, facilitating the identification of combinations of predictors that explain the most variance in the data.
 
 ### Usage
 
@@ -40,16 +42,18 @@ print(result)
 * data: A data frame containing the variables.
 * y_var: The name of the target variable (as a string).
 * x1_var, x2_var, ... (up to x5_var): The names of predictor variables (as strings).
+* sort: Whether or not to sort the output matrix based on r-squared (default = TRUE).
 * p_value_threshold (optional): The p-value threshold for statistical significance (default = 0.05).
 
 ### Output
 
-The function returns a data frame with the following columns:
+The function returns a matrix with the following columns:
 
 ```
     model: The model formula.
     significant_predictors: A list of statistically significant predictors.
     p_values: A list of corresponding p-values.
+    r-squared: The r-squared of the fitted model.
 ```
 
 ### Example
@@ -62,13 +66,17 @@ result <- model_explorer(data = mtcars, y_var = "mpg",
 print(result)
 ```
 
-## Sensitivity Analysis with Randomized Subsets (Shadow Iterations)
+## Sensitivity analysis with repeated random subsampling
 
 Suppose that you've identified some relationships in your data using model explorer. Yet, given the large number of tests you are performing, there is a good chance that the relationships you have identified are spurrious. It would be particularly helpful to know the robustness of a particular finding with sensitivity analyses.
 
-The ten_shadows function, based on the shadow iteration technique, performs sensitivity analysis within a linear regression framework. It helps gauge the robustness of your model by repeatedly fitting it on random subsets of the data and checking if the original predictors (or interactions) remain statistically significant. The function is capable of incorporating two-way interaction terms, and also can be set to focus on the significance of the interaction term rather than on the indicated predictors.
+The ten_shadows function, based on repeated random subsampling techniques (or Monte Carlo cross-validation), performs sensitivity analysis for linear models including for moderation hypotheses. It helps gauge the robustness of your findings by repeatedly fitting it on random subsets of the data and checking if the original predictors (or interactions) remain statistically significant. The function is capable of incorporating two-way interaction terms, and also can be set to focus on the significance of the interaction terms rather than on the indicated predictors. As with all Monte Carlo techniques, some variation in the output is inevitable.
 
-A good rule of thumb is that for the default ten iterations, predictors (or interactions) should be significant across 100% of them. A paper detailing the methods of the function, relative to other sensitivity analyses, is forthcoming.
+This function does not provide or work with typical performance metrics associated with cross-validation (e.g. MSE, r-squared), since this functionality is covered by other repeated random subsampling or other cross-validation techniques. Consider ten_shadows() an extension or complement to existing cross-validation functions, aimed to discover sources and reasons of overfitting. This functionality is covered in the shadow_read() function in the next section.
+
+As the number of iterations approaches infinity, the ten_shadows function will tend towards findings using leave-p-out cross-validation subsampling techniques. However, as models become more complex and datasets become larger, the computational complexity of the function exponentially grows, which may lead to long processing times. A recommended starting point is to perform just 10 iterations, leaving the option to increase this to 1000 or 10000 depending on performance.
+
+A good rule of thumb is that for the default 10 iterations, predictors (or interactions) should be significant across 100% of them. For larger numbers of iterations, a performance metric of at least 95% is ideal.
 
 ### Usage
 
@@ -101,10 +109,13 @@ The ten_shadows function returns a list. Each element of the list (named "shadow
 
 ```
 dataset: The subset of data used for that iteration.
+original_shadow: The original dataset from which the subset is created from.
 model_summary: The output of summary(lm()) for the fitted model.
 ```
 
-If no iterations yield significant findings, an error message is returned. This is a good indication about the relative robustness of the predictors/interactions.
+If no iterations yield significant findings, an error message is returned. This is a good indication that the indicated relationships are not robust.
+
+The function also prints a message with the performance metric, indicating the percentage of iterations that result in significant findings for the indicated predictors/interactions. It also provides the range of regression coefficients across all resampling subsets, which may be a useful metric to gauge the relative robustness of a particular finding.
 
 ### Example
 
