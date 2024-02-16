@@ -115,10 +115,10 @@ ten_shadows <- function(dataset,
 
     # Simplified Coefficient Summary Messages
     if (!is.null(average_coefficients)) {
-      header_row <- c("Variable", "Average Coefficient", "Lowest Coefficient", "Highest Coefficient")
+      header_row <- c("Variable", "Min", "Mean coefficient", "Max")
       output_data <- data.frame(Variable = names(average_coefficients),
-                                Average = format(round(average_coefficients, 3), nsmall = 3),
                                 Lowest = format(round(lowest_coefficients, 3), nsmall = 3),
+                                Average = format(round(average_coefficients, 3), nsmall = 3),
                                 Highest = format(round(highest_coefficients, 3), nsmall = 3))
 
       # Optional: Print header nicely
