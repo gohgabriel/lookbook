@@ -123,10 +123,7 @@ ten_shadows <- function(dataset,
       }
     }
 
-    return(list(significant_shadows = significant_shadows,
-                average_coefficients = average_coefficients,
-                lowest_coefficients = lowest_coefficients,
-                highest_coefficients = highest_coefficients))
+    return(significant_shadows)
   }
 }
 
