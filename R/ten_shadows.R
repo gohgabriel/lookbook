@@ -115,11 +115,18 @@ ten_shadows <- function(dataset,
 
     # Simplified Coefficient Summary Messages
     if (!is.null(average_coefficients)) {
-      for (var_name in names(average_coefficients)) {
-        message("For variable  '", var_name, "':",
-                "  Average Coefficient: ", average_coefficients[var_name],
-                "  Lowest Coefficient: ", lowest_coefficients[var_name],
-                "  Highest Coefficient: ", highest_coefficients[var_name])
+      header_row <- c("Variable", "Average Coefficient", "Lowest Coefficient", "Highest Coefficient")
+      output_data <- data.frame(Variable = names(average_coefficients),
+                                Average = format(round(average_coefficients, 3), nsmall = 3),
+                                Lowest = format(round(lowest_coefficients, 3), nsmall = 3),
+                                Highest = format(round(highest_coefficients, 3), nsmall = 3))
+
+      # Optional: Print header nicely
+      cat(sprintf("%-20s %-20s %-20s %-20s\n", header_row[1], header_row[2], header_row[3], header_row[4]))
+
+      # Print rows
+      for (i in 1:nrow(output_data)) {
+        cat(sprintf("%-20s %-20s %-20s %-20s\n", output_data[i,]))
       }
     }
 
