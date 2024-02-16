@@ -2,7 +2,8 @@
 
 model_explorer <- function(data,
                            y_var, x1_var, x2_var, x3_var = NULL, x4_var = NULL, x5_var = NULL,
-                           p_value_threshold = 0.05) {
+                           p_value_threshold = 0.05,
+                           sort = TRUE) {
 
   # Ensure valid column names
   all_vars <- c(y_var, x1_var, x2_var, x3_var, x4_var, x5_var)
@@ -99,12 +100,16 @@ for (formula_str_index in 1:length(formula_list)) {
   
 } # End of loop
 
+  # Conditional Sorting (Based on the 'sort' argument)
+    if (sort) {
+        output_list <- output_list[order(-sapply(output_list, function(x) x$r_squared))]
+    }
 
   # Check if any models were significant
   if (length(output_list) == 0) {
     message("Predictors were not found to be significant across all model iterations.")
   } else {
-    output_df <- do.call(rbind, output_list) # Convert list to dataframe
+    # output_df <- do.call(rbind, output_list) # Convert list to dataframe, commented out for now.
   }
 
   return(output_df)
