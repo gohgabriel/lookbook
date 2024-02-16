@@ -74,6 +74,8 @@ for (formula_str_index in 1:length(formula_list)) {
     } 
 
     # Store results (We no longer need error handling here)
+
+    print(summary_data)
     output_list[[length(output_list) + 1]] <- list(model = formula_str,
                                                    significant_predictors = as.character(rownames(summary_data)),
                                                    p_values = summary_data[, "Pr(>|t|)"]) 
