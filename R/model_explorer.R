@@ -55,31 +55,32 @@ model_explorer <- function(data,
   })
 
 
-  # Loop through formulae
-  for (formula_str_index in 1:length(formula_list)) {
-    formula_str <- as.formula(formula_list[[formula_str_index]])
+ # Loop through formulae
+for (formula_str_index in 1:length(formula_list)) {
+  formula_str <- as.formula(formula_list[[formula_str_index]])
 
-    model <- lm(formula_str, data = data)
+  model <- lm(formula_str, data = data)
 
-    # Extract significant predictors and p-values (Example threshold at p < 0.05)
+  # Check for typical model output
+  if (is_typical_model_output(model)) {  # We'll define this function next
+
+    # Extract significant predictors and p-values 
     if (is.null(summary(model)$coefficients) ||
         ncol(summary(model)$coefficients) >= 4 ||
         nrow(summary(model)$coefficients) == 1) {
       summary_data <- summary(model)$coefficients[summary(model)$coefficients[, 4] < p_value_threshold, ]
-
     } else {
       summary_data <- NULL
-    }
+    } 
 
-      # Store results 
-      if (!exists("summary_data") || nrow(summary_data) == 0) { 
-        # Skip this model iteration
-      } else { 
-        # Process significant predictors.
-        output_list[[length(output_list) + 1]] <- list(model = formula_str,
-                                                       significant_predictors = as.character(rownames(summary_data)),
-                                                       p_values = summary_data[, "Pr(>|t|)"]) 
-      }
+    # Store results (We no longer need error handling here)
+    output_list[[length(output_list) + 1]] <- list(model = formula_str,
+                                                   significant_predictors = as.character(rownames(summary_data)),
+                                                   p_values = summary_data[, "Pr(>|t|)"]) 
+
+  } else { 
+    # Skip iteration (model output was atypical) 
+  } 
 }
 
 
@@ -92,4 +93,21 @@ model_explorer <- function(data,
 
   return(output_df)
 
+}
+
+is_typical_model_output <- function(model) {
+  # Here, you'll add checks based on what constitutes "typical" model output
+
+  # Some potential checks (adjust to your needs):
+  if (class(model) != "lm") {
+    return(FALSE) # Not a standard 'lm' output
+  }
+
+  if (length(model$coefficients) == 0) {
+    return(FALSE) # Model has no coefficients 
+  }
+
+  # ... Add more checks as needed 
+
+  return(TRUE) # Passes all checks
 }
