@@ -72,9 +72,7 @@ Suppose that you've identified some relationships in your data using model explo
 
 The ten_shadows function, based on repeated random subsampling techniques (or Monte Carlo cross-validation), performs sensitivity analysis for linear models including for moderation hypotheses. It helps gauge the robustness of your findings by repeatedly fitting it on random subsets of the data and checking if the original predictors (or interactions) remain statistically significant. The function is capable of incorporating two-way interaction terms, and also can be set to focus on the significance of the interaction terms rather than on the indicated predictors. As with all Monte Carlo techniques, some variation in the output is inevitable.
 
-This function does not provide or work with typical performance metrics associated with cross-validation (e.g. MSE, r-squared), since this functionality is covered by other repeated random subsampling or other cross-validation techniques. Consider ten_shadows() an extension or complement to existing cross-validation functions, aimed to discover sources and reasons of overfitting. This functionality is covered in the shadow_read() function in the next section.
-
-As the number of iterations approaches infinity, the ten_shadows function will tend towards findings using leave-p-out cross-validation subsampling techniques. However, as models become more complex and datasets become larger, the computational complexity of the function exponentially grows, which may lead to long processing times. A recommended starting point is to perform just 10 iterations, leaving the option to increase this to 1000 or 10000 depending on performance.
+Additionally, ten_shadows provides MSE statistics, replicating the functionality of other repeated random subsampling or other cross-validation techniques. As the number of iterations approaches infinity, the ten_shadows function will tend towards findings using leave-p-out cross-validation subsampling techniques. However, as models become more complex and datasets become larger, the computational complexity of the function exponentially grows, which may lead to long processing times. A recommended starting point is to perform just 10 iterations, leaving the option to increase this to 1000 or 10000 depending on performance.
 
 A good rule of thumb is that for the default 10 iterations, predictors (or interactions) should be significant across 100% of them. For larger numbers of iterations, a performance metric of at least 95% is ideal.
 
@@ -105,6 +103,8 @@ results <- ten_shadows(dataset = my_data,
 
 ### Output
 
+The function prints the MSE summary statistics and the performance metric, indicating the percentage of iterations that result in significant findings for the indicated predictors/interactions. It also provides the range of regression coefficients across all resampling subsets, which may be a useful metric to gauge the relative robustness of a particular finding.
+
 The ten_shadows function returns a list. Each element of the list (named "shadow_1", "shadow_2", etc.) corresponds to an iteration where the variables were significant and includes:
 
 ```
@@ -114,8 +114,6 @@ model_summary: The output of summary(lm()) for the fitted model.
 ```
 
 If no iterations yield significant findings, an error message is returned. This is a good indication that the indicated relationships are not robust.
-
-The function also prints a message with the performance metric, indicating the percentage of iterations that result in significant findings for the indicated predictors/interactions. It also provides the range of regression coefficients across all resampling subsets, which may be a useful metric to gauge the relative robustness of a particular finding.
 
 ### Example
 
