@@ -79,9 +79,11 @@ for (formula_str_index in 1:length(formula_list)) {
 
     # Store results (We no longer need error handling here)
     
+      p_values <- round(summary_data[, "Pr(>|t|)"], 3)
+      p_values[p_values == 0] <- 0.001  # Apply the minimum for zeros
       output_list[[length(output_list) + 1]] <- list(model = formula_str,
-                                                     significant_predictor = as.character(rownames(summary_data)),
-                                                     p_values = round(summary_data[, "Pr(>|t|)"], 3))  # Change here
+                                                     significant_predictors = as.character(rownames(summary_data)),
+                                                     p_values = p_values) 
 
   } else { 
     # Skip iteration (model output was atypical) 
@@ -121,6 +123,11 @@ is_typical_model_output <- function(model) {
   if (length(rownames(summary_coefficients)) != length(model$coefficients)) {
     return(FALSE) # Predictors were dropped
   }
-
+  
+    # Additional check
+  if (nrow(summary(model)$coefficients) == 1 && rownames(summary(model)$coefficients[1,]) == "(Intercept)") {
+    return(FALSE)  # Model has only intercept
+  }
+  
   return(TRUE) # Passes all checks
 }
