@@ -72,15 +72,14 @@ model_explorer <- function(data,
     }
 
   # Store results (with error handling)
-  if (!is.null(summary_data) && nrow(summary_data) > 0) {
+  if (is.null(summary_data) || nrow(summary_data) == 0) { 
+  # Skip, no significant predictors for this model
+    } else { 
     output_list[[length(output_list) + 1]] <- list(model = formula_str,
-                                                   significant_predictors = as.character(rownames(summary_data)),
-                                                   p_values = summary_data[, "Pr(>|t|)"]) 
-
-  } else {  # Add this section to handle possible NULL
-    print(paste0("Model with formula '", formula_str, "' did not produce significant predictors."))
-  } 
-  }
+                                                 significant_predictors = as.character(rownames(summary_data)),
+                                                 p_values = summary_data[, "Pr(>|t|)"]) 
+    } 
+}
 
 
   # Check if any models were significant
