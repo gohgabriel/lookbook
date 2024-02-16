@@ -77,23 +77,29 @@ for (formula_str_index in 1:length(formula_list)) {
         summary_data <- NULL
       } 
 
-    # Store results (We no longer need error handling here)
+    # Store results
     
-      p_values <- round(summary_data[, "Pr(>|t|)"], 3)
-      p_values[p_values == 0] <- 0.001  # Apply the minimum for zeros
-      output_list[[length(output_list) + 1]] <- list(model = formula_str,
-                                                     significant_predictors = as.character(rownames(summary_data)),
-                                                     p_values = p_values) 
+        if (!is.null(summary_data)) { 
+                        p_values <- round(summary_data[, "Pr(>|t|)"], 3)
+                        p_values[p_values == 0] <- 0.001 
+                        output_list[[length(output_list) + 1]] <- list(model = formula_str,
+                                                                       significant_predictors = as.character(rownames(summary_data)),
+                                                                       p_values = p_values) 
+                        } else { 
+                          # Skip iteration (no significant predictors) 
+                        }        
+           
 
   } else { 
     # Skip iteration (model output was atypical) 
   } 
-}
+  
+} # End of loop
 
 
   # Check if any models were significant
   if (length(output_list) == 0) {
-    message("No significant predictors found")
+    message("Predictors were not found to be significant across all model iterations.")
   } else {
     output_df <- do.call(rbind, output_list) # Convert list to dataframe
   }
@@ -122,11 +128,6 @@ is_typical_model_output <- function(model) {
 
   if (length(rownames(summary_coefficients)) != length(model$coefficients)) {
     return(FALSE) # Predictors were dropped
-  }
-  
-    # Additional check
-  if (nrow(summary(model)$coefficients) == 1 && rownames(summary(model)$coefficients[1,]) == "(Intercept)") {
-    return(FALSE)  # Model has only intercept
   }
   
   return(TRUE) # Passes all checks
