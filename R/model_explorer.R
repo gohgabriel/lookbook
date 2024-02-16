@@ -109,10 +109,10 @@ for (formula_str_index in 1:length(formula_list)) {
   if (length(output_list) == 0) {
     message("Predictors were not found to be significant across all model iterations.")
   } else {
-    # output_df <- do.call(rbind, output_list) # Convert list to dataframe, commented out for now.
+    output_df <- do.call(rbind, output_list) # Convert list to dataframe, commented out for now.
   }
 
-  return(output_list)
+  return(output_df)
 
 }
 
