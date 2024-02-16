@@ -112,7 +112,7 @@ for (formula_str_index in 1:length(formula_list)) {
     # output_df <- do.call(rbind, output_list) # Convert list to dataframe, commented out for now.
   }
 
-  return(output_df)
+  return(output_list)
 
 }
 
