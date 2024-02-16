@@ -107,7 +107,15 @@ is_typical_model_output <- function(model) {
     return(FALSE) # Model has no coefficients 
   }
 
-  # ... Add more checks as needed 
+   # New checks:
+  summary_coefficients <- summary(model)$coefficients
+  if (!"Pr(>|t|)" %in% colnames(summary_coefficients)) {
+    return(FALSE) # Missing "Pr(>|t|)" column
+  }
+
+  if (length(rownames(summary_coefficients)) != length(model$coefficients)) {
+    return(FALSE) # Predictors were dropped
+  }
 
   return(TRUE) # Passes all checks
 }
