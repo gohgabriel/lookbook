@@ -1,4 +1,3 @@
-
 #' @export
 
 shadow_read <- function(results, top_n = NULL) {
@@ -14,6 +13,7 @@ shadow_read <- function(results, top_n = NULL) {
 
     obs_ids <- results[[shadow_name]]$original_shadow$obs_id # Get all unique obs_ids
     original_shadow <- results[[shadow_name]]$original_shadow
+    model_formula <- results[[shadow_name]]$model_formula
 
     # Initialize vectors for this shadow
     excluded_frequencies <- rep(0, length(obs_ids))
@@ -44,6 +44,11 @@ shadow_read <- function(results, top_n = NULL) {
   total_excluded <- Reduce("+", excluded_freqs)
   total_included <- Reduce("+", included_freqs)
 
+  # Calculate Inclusion Weights Across ALL Subsets
+  mean_inclusion_freq <- mean(total_included)   # Mean across the original dataset
+  inclusion_weights <- total_included / mean_inclusion_freq
+  names(inclusion_weights) <- names(total_included)
+
   # Sort to Find Most Frequent
   sorted_excluded <- sort(total_excluded, decreasing = TRUE)
   sorted_included <- sort(total_included, decreasing = TRUE)
@@ -56,12 +61,16 @@ shadow_read <- function(results, top_n = NULL) {
   top_excluded_df <- original_shadow[original_shadow$obs_id %in% top_excluded_ids, ]
   top_included_df <- original_shadow[original_shadow$obs_id %in% top_included_ids, ]
 
-  return(list(excluded_frequencies = excluded_freqs,
+  return(list(original_dataset = cbind(original_shadow, obs_weight = inclusion_weights),
+              model_formula = model_formula,
+              excluded_frequencies = excluded_freqs,
               included_frequencies = included_freqs,
               total_excluded = total_excluded,
               total_included = total_included,
               top_excluded_obs = top_excluded_ids,
               top_included_obs = top_included_ids,
               top_excluded_df = top_excluded_df,
-              top_included_df = top_included_df))
+              top_included_df = top_included_df,
+              inclusion_weights = inclusion_weights)
+  )
 }
