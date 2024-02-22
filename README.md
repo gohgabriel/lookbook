@@ -10,6 +10,7 @@ It currently has the following functions:
 * shadow_read
 * s_weighted_bootstrap
 * checkerboard_upscaler
+* fidelity_error_index
 
 # Installation
 
