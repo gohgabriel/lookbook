@@ -9,6 +9,7 @@ It currently has the following functions:
 * ten_shadows
 * shadow_read
 * s_weighted_bootstrap
+* checkerboard_upscaler
 
 # Installation
 
@@ -227,3 +228,50 @@ Printed Output: The function  displays the following, making interpretation of  
     Model formula.
     Descriptive bootstrapping statement specifying technique and confidence level.
     Table showing lower and upper bounds of calculated confidence intervals for each model coefficient.
+
+## Checkerboard upscaling
+
+Flexible data upscaling function for generating new observations, imputing missing values, and supporting various modeling and analysis scenarios.
+
+### Features
+
+* Diverse Imputation Methods:
+
+    Linear regression
+    Random forests (using the 'randomForest' package)
+    Bayesian regression (using the 'brms' package)
+    Easily extendable to incorporate additional imputation techniques
+
+* Automatic Handling of Low-Variability Columns: Detects columns with few unique values and directly copies them during the upscaling process.
+
+* Checkerboard Output: Optionally interweaves original and upscaled rows, creating datasets suitable for simulation-like studies.
+
+* Customizable Threshold: Control which columns are considered low-variability using the uniq_threshold parameter.
+
+### Dependencies
+
+randomForest (for random forest), brms (for Bayesian regression)
+
+### Usage
+
+```
+# Sample data
+data <- data.frame(col1 = c(1, 2, NA, 4),
+                   col2 = c("A", "A", "B", "B"),
+                   col3 = c(10.5, 8.2, 3.4, NA))
+
+# Upscale with linear regression imputation and checkerboard output
+result1 <- checkerboard_upscale(data, imputation_method = "linear_regression")
+
+# Upscale with Bayesian imputation (non-checkerboard output)
+result2 <- checkerboard_upscale(data, imputation_method = "bayesian", checkerboard = FALSE)
+```
+
+### Parameters
+
+    data: The input data frame.
+    unsplit_cols: A vector of column names to be copied directly without imputation.
+    imputation_method: The imputation method to use. Supported options: "linear_regression", "random_forest", "bayesian".
+    checkerboard: Boolean flag to enable checkerboarded interweaving of rows. If FALSE, creates a completely generated version of the original dataset of the same size.
+    uniq_threshold: Threshold for detecting low-variability columns.
+
