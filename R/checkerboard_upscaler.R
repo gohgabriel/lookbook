@@ -62,7 +62,7 @@ checkerboard_upscale <- function(data, unsplit_cols = NULL, imputation_method = 
 
     # Conditional Interweaving / Upscaling
     if (checkerboard) {
-      # Interweave the rows for output
+      # Interweave the columns for output
       split_cols_idx <- which(colnames(data) %in% split_cols)
       for (j in seq_along(split_cols)) {
         col_idx <- split_cols_idx[j]

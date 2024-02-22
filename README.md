@@ -274,4 +274,50 @@ result2 <- checkerboard_upscale(data, imputation_method = "bayesian", checkerboa
     imputation_method: The imputation method to use. Supported options: "linear_regression", "random_forest", "bayesian".
     checkerboard: Boolean flag to enable checkerboarded interweaving of rows. If FALSE, creates a completely generated version of the original dataset of the same size.
     uniq_threshold: Threshold for detecting low-variability columns.
+    
+## Fidelity Error Indices
+
+One particularly useful application of checkerboard upscaling is in creating fidelity error indices. If your dataset is an accurate representation of the population, then on average, upscaling a subsample of your dataset should produce a dataset that is a relatively close approximation of the original. If the upscales produce relatively poor approximations, it may be a sign that the original dataset may not consistently provide an accurate representation of the underlying phenomena it was meant to capture.
+
+Conceptually, the fidelity_error_index function:
+* Measures how sensitive a dataset is to the process of taking smaller "snapshots" and then reconstructing it back to its original form.
+* Assesses whether the dataset consistently provides an accurate representation of the underlying phenomenon it's meant to capture.
+* Helps identify potential biases or limitations in how the data was collected or structured.
+
+### Usage
+
+```
+FI <- fidelity_index(data = iris, imputation_method = "random_forest")
+FI
+```
+
+### Parameters
+
+data (Required): The input dataset in data frame format.
+
+n_iterations (Optional, default=10):
+
+    The number of times to repeat the subsampling, upscaling, and comparison process.
+    A higher number provides a more robust estimate of the error index.
+
+subsample_size (Optional, default=0.5):
+
+    The proportion of the original dataset to include in each subsample.
+    Ranges from 0 to 1. Experiment to see how it affects the error index.
+
+imputation_method (Optional, default="linear_regression"):
+
+    The imputation method to use within the upscaling step.
+    Can be a string specifying a method ("random_forest", "bayesian", etc.) or a custom imputation function.
+
+comparison_metric (Optional, default="mean_squared_error"):
+
+    The metric to use for calculating the error between the original and upscaled datasets.
+    Can be a string specifying a standard metric or a custom function.
+
+### Output
+
+* mean_fidelity_error_index: A metric indicating the average discrepancy (or fidelity error) between the original dataset and reconstructions based on subsamples. Higher values suggest the dataset might be less consistent or less effective at capturing complex relationships. For most datasets, a value between 1 to 1.4 is common, representing moderate fidelity error. A value less than 1 suggests a dataset of very high quality, and a value more than 2 suggests severe inconsistencies/noise present in the dataset.
+* mean_error_index_per_column: Identifies specific columns that are particularly difficult to reconstruct accurately, potentially highlighting areas needing improvement in data collection or imputation.
+
 
