@@ -284,6 +284,10 @@ Conceptually, the fidelity_error_index function:
 * Assesses whether the dataset consistently provides an accurate representation of the underlying phenomenon it's meant to capture.
 * Helps identify potential biases or limitations in how the data was collected or structured.
 
+The output fidelity error index for a given iteration represents the difference in variance between the generated observations and the actual remaining observations in the original dataset, normalized by the standard deviation in the original dataset. E.g. if the fidelity error index is 1.4, this means that the difference in variance is 1.4 times the standard deviation for that variable in the original dataset. If the generated dataset were perfect, the FEI would be 0.
+
+Across iterations, the FEI is sensitive to the quality of the subsample (some subsamples would produce lower FEIs than others because they may be better representations of the original dataset). Taking the mean FEI across at least 10 iterations provides a better estimate of the average FEI of the dataset.
+
 ### Usage
 
 ```
