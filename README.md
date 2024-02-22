@@ -236,11 +236,10 @@ Flexible data upscaling function for generating new observations, imputing missi
 ### Features
 
 * Diverse Imputation Methods:
-
-    Linear regression
-    Random forests (using the 'randomForest' package)
-    Bayesian regression (using the 'brms' package)
-    Easily extendable to incorporate additional imputation techniques
+    * Linear regression
+    * Random forests (using the 'randomForest' package)
+    * Bayesian regression (using the 'brms' package)
+    * Easily extendable to incorporate additional imputation techniques
 
 * Automatic Handling of Low-Variability Columns: Detects columns with few unique values and directly copies them during the upscaling process.
 
