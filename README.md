@@ -284,9 +284,16 @@ Conceptually, the fidelity_error_index function:
 * Assesses whether the dataset consistently provides an accurate representation of the underlying phenomenon it's meant to capture.
 * Helps identify potential biases or limitations in how the data was collected or structured.
 
-The output fidelity error index for a given iteration represents the difference in variance between the generated observations and the actual remaining observations in the original dataset, normalized by the standard deviation in the original dataset. E.g. if the fidelity error index is 1.4, this means that the difference in variance is 1.4 times the standard deviation for that variable in the original dataset. If the generated dataset were perfect, the FEI would be 0.
+![Epsilon_x](https://github.com/gohgabriel/lookbook/assets/159949717/3e51cb0e-f8ae-4dc6-a18c-236262716478)
 
-Across iterations, the FEI is sensitive to the quality of the subsample (some subsamples would produce lower FEIs than others because they may be better representations of the original dataset). Taking the mean FEI across at least 10 iterations provides a better estimate of the average FEI of the dataset.
+Assuming delta terms are approximately zero,
+![Untitled](https://github.com/gohgabriel/lookbook/assets/159949717/d3809c17-a8b6-48b8-9d52-92e7f2f4df58)
+
+The output fidelity error index for a given iteration represents the difference in variance between the generated observations and the actual remaining observations in the original dataset, normalized by the standard deviation in the original dataset. E.g. if the fidelity error index is 1.4, this means that the difference in variance is 1.4 times the standard deviation for that variable in the original dataset. If the generated dataset were perfect, the FEI (or epsilon) would be 0. FEI is an approximation of epsilon by treating the delta terms as approximately zero.
+
+Across iterations, the FEI is sensitive to the quality of the subsample (some subsamples would produce lower FEIs than others because they may be better representations of the original dataset). Taking the mean FEI across many iterations allows an approximation of zero for delta(subsetting).
+
+Note that the fidelity index is an overestimation and thus conservative estimate of epsilon, since in most cases delta(upscaling) is non-zero. With prior knowledge of delta(upscaling), the resulting FEI can be refined to a better estimate of epsilon.
 
 ### Usage
 
