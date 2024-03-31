@@ -6,7 +6,7 @@ Lookbook is a R package with various R functions designed to explore patterns in
 
 It currently has the following functions:
 * model_explorer
-* ten_shadows
+* subsampling_sensitivity
 * shadow_read
 * s_weighted_bootstrap
 * checkerboard_upscaler
@@ -73,9 +73,9 @@ print(result)
 
 Suppose that you've identified some relationships in your data using model explorer. Yet, given the large number of tests you are performing, there is a good chance that the relationships you have identified are spurrious. It would be particularly helpful to know the robustness of a particular finding with sensitivity analyses.
 
-The ten_shadows function, based on repeated random subsampling techniques (or Monte Carlo cross-validation), performs sensitivity analysis for linear models including for moderation hypotheses. It helps gauge the robustness of your findings by repeatedly fitting it on random subsets of the data and checking if the original predictors (or interactions) remain statistically significant. The function is capable of incorporating two-way interaction terms, and also can be set to focus on the significance of the interaction terms rather than on the indicated predictors. As with all Monte Carlo techniques, some variation in the output is inevitable.
+The function, based on repeated random subsampling techniques (or Monte Carlo cross-validation), performs sensitivity analysis for linear models including for moderation hypotheses. It helps gauge the robustness of your findings by repeatedly fitting it on random subsets of the data and checking if the original predictors (or interactions) remain statistically significant. The function is capable of incorporating two-way interaction terms, and also can be set to focus on the significance of the interaction terms rather than on the indicated predictors. As with all Monte Carlo techniques, some variation in the output is inevitable.
 
-Additionally, ten_shadows provides MSE statistics, replicating the functionality of other repeated random subsampling or other cross-validation techniques. As the number of iterations approaches infinity, the ten_shadows function will tend towards findings using leave-p-out cross-validation subsampling techniques. However, as models become more complex and datasets become larger, the computational complexity of the function exponentially grows, which may lead to long processing times. A recommended starting point is to perform just 10 iterations, leaving the option to increase this to 1000 or 10000 depending on performance.
+Additionally, it provides MSE statistics, replicating the functionality of other repeated random subsampling or other cross-validation techniques. As the number of iterations approaches infinity, the function will tend towards findings using leave-p-out cross-validation subsampling techniques. However, as models become more complex and datasets become larger, the computational complexity of the function exponentially grows, which may lead to long processing times. A recommended starting point is to perform just 10 iterations, leaving the option to increase this to 1000 or 10000 depending on performance.
 
 A good rule of thumb is that for the default 10 iterations, predictors (or interactions) should be significant across 100% of them. For larger numbers of iterations, a performance metric of at least 95% is ideal.
 
