@@ -1,0 +1,1369 @@
+---
+title: "Code Library"
+output: html_document
+date: "2024-04-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Descriptive Statistics
+
+```{r}
+library(psych)
+library(haven)
+library(lavaan)
+library(psych)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(interactions)
+
+### This creates a custom R2-change function in R (OLS)
+R2change <- function(lm2, lm1) {
+   cat("R2 change: ", summary(lm2)$r.squared - summary(lm1)$r.squared, "\n")
+   F.stat <- anova(lm1, lm2)
+   cat("F(", F.stat$Df[2],",", F.stat$Res.Df[2],")=", F.stat$F[2],", p=", F.stat$"Pr(>F)"[2], "\n")
+}
+
+```
+
+## Descriptive Table
+
+```{r}
+library(summarytools)
+
+stby(
+  data = cleaned6_long.df[c("VC_avg", "HC_avg", "CSE_s_avg", "pun")],
+  INDICES = cleaned6_long.df$time, # by Group
+  FUN = descr, # descriptive statistics
+  stats = "common" # most common descr. stats
+)
+
+stby(
+  data = cleaned6.df[c("mat_BSE", "mat_IGL")],
+  INDICES = cleaned6.df$matrix_type, # by Group
+  FUN = descr, # descriptive statistics
+  stats = "common" # most common descr. stats
+)
+```
+
+If describe function is needed:
+
+```{r}
+by(my.df[c("A", "B", "C")], cleaned.df$Group, describe)
+```
+
+## Scatterplot of data
+```{r}
+plot(y ~ x, data=my.df, col="red", main="A scatter plot")
+
+with(my.df, scatter.smooth(y, x, col="blue"))
+```
+
+## Creating regression scales
+
+```{r}
+cleaned.df$rubr_avg <- (cleaned.df$MSK_rubr + cleaned.df$GATH_rubr + cleaned.df$MIS_rubr)/3
+```
+
+## Centering variables
+
+```{r}
+my.df$x_c <- scale(my.df$x_avg, scale=FALSE)
+```
+
+## Correlational matrix
+
+```{r}
+res2 <- rcorr(as.matrix(my.df[,c("A","B","C")]))
+res2
+
+cor_plot(res2)
+```
+
+
+## Alphas
+
+There is probably a better way to do this, but this method is easiest.
+
+```{r}
+x_alpha <- psych::alpha(my.df[,c("x1","x2","x3","x4","x5","x6","x7","x8")])
+
+```
+
+
+## Model Diagnostics
+
+We have to first fit a linear model with the variables we want, before we can perform basic model diagnostics.
+
+### Multicollinearity
+
+```{r}
+library(olsrr)
+
+fit1 <- lm(y ~ x1 + x2 + x3 + x4, data=my.df)
+summary(fit1)
+
+ols_vif_tol(fit1)
+```
+
+### Examining residuals
+
+If the plot doesn't look skewed (e.g. anything not sausage-shaped or following the theoretical distribution), it is fine to proceed with linear regression.
+
+```{r}
+
+pairs(my.df, upper.panel=panel.cor, diag.panel=panel.hist)
+
+## Plot the residuals against the theoretical distribution
+ols_plot_resid_qq(fit1)
+```
+
+If there are issues with residuals, better to proceed with robust regression or bootstrapping.
+
+
+# GLM
+
+## Linear model
+
+```{r}
+fit1.1 <- lm(y ~ x*Group + y*Group, data=cleaned.df)
+
+summary(fit1.1)
+
+probe_interaction(fit1.1, pred=VC_avg, modx=Group)
+
+full_model <- fit1.1
+reduced_model_HC <- lm(formula = MoralT ~ HC_avg + Group + VC_avg * Group, data = cleaned.df)
+reduced_model_VC <- lm(formula = MoralT ~ HC_avg * Group + VC_avg + Group, data = cleaned.df)
+
+anova(reduced_model_HC, full_model)
+anova(reduced_model_VC, full_model)
+
+r_squared_change_HC <- summary(full_model)$r.squared - summary(reduced_model_HC)$r.squared
+r_squared_change_HC
+
+r_squared_change_VC <- summary(full_model)$r.squared - summary(reduced_model_VC)$r.squared
+r_squared_change_VC
+```
+
+
+## Logistic Regression
+
+```{r}
+my.df1 <- read.csv("lec3a.csv", header=TRUE)
+head(my.df1)
+
+## Convert CHD into 0 (no) and 1 (yes) for regression analysis
+( CHD_01 <- ifelse(my.df1$CHD=="yes", yes=1, no=0) )
+
+## Convert CHD from characters to factors, which is required in glm().
+## "no" is the reference group.
+## We are predicting the "yes" group.
+my.df1$CHD <- factor(my.df1$CHD, levels=c("no", "yes"))
+
+## Link function: binomial for logistic regression
+my.fit1 <- glm(CHD~Age, data=my.df1, family="binomial")
+summary(my.fit1)
+
+## 95% Wald CI
+confint.default(my.fit1)
+## 95% likelihood-based CI (more accurate)
+confint(my.fit1)
+
+## Library to calculate pseudo R2, not very useful
+library(DescTools)
+PseudoR2(my.fit1, which=c("McFadden", "CoxSnell"))
+```
+
+We can examine the predictions.
+
+```{r}
+## The default output is in logit
+my.p1 <- predict(my.fit1, type="response")
+head(my.p1, n=20)
+
+## Convert it into Yes and No
+predicted.CHD <- ifelse(my.p1 > .5, yes="yes", no="no" )
+head(predicted.CHD, n=20)
+
+## Actual data
+actual.CHD <- my.df1$CHD
+table(actual.CHD, predicted.CHD)
+```
+
+We can also fit predictors.
+
+```{r}
+my.fit3 <- glm(LOW~Smoke+LWT+Age, data=my.df2, family="binomial")
+summary(my.fit3)
+
+## Intercept model without any predictor
+my.fit0 <- glm(LOW~1, data=my.df2, family="binomial")
+
+## LR statistic on testing whether all coefficients are zero
+anova(my.fit0, my.fit3, test="Chisq")
+
+confint(my.fit3)
+
+## CI for odds ratio
+exp(cbind(OR=coef(my.fit3), confint(my.fit3)))
+```
+
+Comparing nested models:
+
+```{r}
+# Does LWT and Age explain unique variance over and above Smoke?
+
+my.fit4 <- glm(LOW~Smoke, data=my.df2, family="binomial")
+summary(my.fit4)
+
+my.fit5 <- glm(LOW~Smoke+LWT+Age, data=my.df2, family="binomial")
+#summary(my.fit5)
+
+anova(my.fit4, my.fit5, test="Chisq")
+```
+
+## Robust regression (sandwich)
+
+```{r}
+## SE base on OLS
+summary(fit1)
+
+library(sandwich)
+library(lmtest)
+
+coeftest(fit1, vcov = vcovHC(fit1)) 
+```
+
+
+## Quadratic regression
+
+```{r}
+ols_plot_resid_fit(fit6) # If this plot looks like a U shape, then we might need quadratic regression.
+
+## Center x before creating the quadratic term
+my.df$x_c <- scale(my.df$x, scale=FALSE)
+
+## I(x_c^2) is required to form the quadratic term
+fit7 <- lm(y ~ x_c + I(x_c^2), data=my.df)
+summary(fit7)
+```
+
+## Lavaan mediation/moderation
+
+Using SEM approach in Lavaan allows us to use FIML estimation for missing data. In addition, bootstrapping allows us to ignore typical issues with non-normality, so we don't have to check for them. If there are serious issues with heteroscedascity, we can also opt to use WLS or a sandwich estimator in lavaan (though this precludes bootstrapping)
+
+### Mediaton with possible moderated mediation via multigroup SEM
+
+```{r}
+
+my.med.test <- 'pos_eval_avg ~ HC_avg + c("b1", "b2")*pun_avg + Version
+            pun_avg ~ c("a1", "a2")*HC_avg + Version
+            
+            ## Define the indirect effects
+            indirect1 := a1*b1
+            indirect2 := a2*b2
+            ind_dif := a1*b1-a2*b2'
+
+# Use se = "robust" if you want robust standard errors. They're less efficient than bootstrapping in general.
+
+my.med1 <- sem(my.med.test, data=cleaned3.df, group="Group", se="bootstrap", bootstrap=2000
+               #, missing = "ML"
+               )
+summary(my.med1)
+parameterEstimates(my.med1)
+
+```
+
+### Moderation in Lavaan
+
+```{r}
+modtest1 <- '
+  pos_eval_avg ~ d*HC_c + g*VC_c + h*VC_c:HC_c
+
+  # Mean & VAR of VC
+  VC_c ~ "VC_c.mean"*1
+  VC_c ~~ "VC_c.var"*VC_c
+
+  # Simple slopes
+  Dir.low := d + h*(VC_c.mean-sqrt(VC_c.var))
+  Dir.high := d + h*(VC_c.mean+sqrt(VC_c.var))
+
+'
+
+my.mod1 <- sem(modtest1, data=cleaned3.df, group="Group", se="bootstrap", bootstrap=2000
+               #, missing = "ML"
+               )
+summary(my.mod1)
+parameterEstimates(my.mod1)
+```
+
+### Mediation with continuous moderation
+
+```{r}
+medtest1 <- '
+  pos_eval_avg ~ d*HC_c + b*pun_c + g*VC_c + h*VC_c:HC_c
+  pun_c ~ a*HC_c + j*VC_c + o*VC_c:HC_c
+
+  # Mean & VAR of VC
+  VC_c ~ "VC_c.mean"*1
+  VC_c ~~ "VC_c.var"*VC_c
+
+  # Indirect effects
+  Ind.low := (a + o*(VC_c.mean-sqrt(VC_c.var)))*b
+  Ind.high := (a + o*(VC_c.mean+sqrt(VC_c.var)))*b
+
+  # Direct effects
+  Dir.low := d + h*(VC_c.mean-sqrt(VC_c.var))
+  Dir.high := d + h*(VC_c.mean+sqrt(VC_c.var))
+
+  # Contrasts for moderation
+  IndVC := Ind.high - Ind.low
+  DirVC := Dir.high - Dir.low
+'
+
+my.med1 <- sem(my.med.test, data=cleaned3.df, group="Group", se="bootstrap", bootstrap=2000
+               #, missing = "ML"
+               )
+summary(my.med1)
+parameterEstimates(my.med1)
+```
+
+### Mediation with continuous + multigroup
+
+```{r}
+medtest1 <- ' 
+           pos_eval_avg ~ c("d1","d2")*HC_c + c("b1","b2")*pun_c + c("g1","g2")*VC_c + c("h1","h2")*VC_c:HC_c
+           pun_c ~ c("a1","a2")*HC_c + c("j1","j2")*VC_c + c("o1","o2")*VC_c:HC_c
+          
+          
+          #Mean & VAR of VC
+          VC_c ~ "VC_c.mean"*1
+          VC_c ~~ "VC_c.var"*VC_c
+
+          
+          ## Indirect effects
+          Ind.low.outgrp := (a1 + o1*(VC_c.mean-sqrt(VC_c.var)))*b1
+          Ind.low.ingrp := (a2 + o2*(VC_c.mean-sqrt(VC_c.var)))*b2
+          
+          Ind.high.outgrp := (a1 + o1*(VC_c.mean+sqrt(VC_c.var)))*b1
+          Ind.high.ingrp := (a2 + o2*(VC_c.mean+sqrt(VC_c.var)))*b2
+          
+          
+          ## Direct effects
+          Dir.low.outgrp := d1 + h1*(VC_c.mean-sqrt(VC_c.var))
+          Dir.low.ingrp := d2 + h2*(VC_c.mean-sqrt(VC_c.var))
+          Dir.high.outgrp := d1 + h1*(VC_c.mean+sqrt(VC_c.var))
+          Dir.high.ingrp:= d2 + h2*(VC_c.mean+sqrt(VC_c.var))
+          
+          
+          ## Contrasts for moderation
+          
+          ## Difference between ingroup and outgroup for high VC and low VC
+          ### Positive = BSE, Negative = Ingroup Leniency
+          
+          IndHighVC:= Ind.high.outgrp - Ind.high.ingrp
+          IndLowVC := Ind.low.outgrp - Ind.low.ingrp
+          
+          DirHighVC:= Dir.high.outgrp - Dir.high.ingrp
+          DirLowVC:= Dir.low.outgrp - Dir.low.ingrp
+          
+          ContIndVC := IndHighVC - IndLowVC
+          ContDirVC := DirHighVC - DirLowVC
+          
+          ## Difference between high VC and low VC for Ingroup and Outgroup
+          IndOutgrp := Ind.high.outgrp - Ind.low.outgrp
+          IndIngrp := Ind.high.ingrp - Ind.low.ingrp
+          
+          DirOutgrp := Dir.high.outgrp - Dir.low.outgrp
+          DirIngrp := Dir.high.ingrp - Dir.low.ingrp
+          
+          ContIndGrp := IndIngrp - IndOutgrp
+          CondDirGrp := DirIngrp - IndOutgrp
+
+          
+            '
+
+my.med1 <- sem(my.med.test, data=cleaned3.df, group="Group", se="bootstrap", bootstrap=2000
+               #, missing = "ML"
+               )
+summary(my.med1)
+parameterEstimates(my.med1)
+```
+
+
+
+
+### Special cases: Yuan-Bentler test
+
+Sometimes we combine robust estimator (MLR) with FIML for handling missing data. We use the Yuan-Bentler estimate for non-normal data (the same way we would hypothetically use bootstrapping).
+
+```{r}
+model_yuan <- 'y ~ c* x + b* m
+               m ~ a* x
+               ab := a*b
+               
+             total := c + (a*b)'
+
+fitFear <- sem(modelFear, data = cabsfull, missing = "fiml.x", estimator = "MLR")
+
+```
+
+## ANOVA
+
+### One-way ANOVA
+
+```{r}
+## Load a few required libraries
+## Library for different types of squares 
+library(car)
+## Library to plot the effects
+library(effects)
+## Library for the multiple comparisons
+library(phia)
+## Library to compute the effect sizes
+library(sjstats)
+
+## as.is=FALSE: convert the strings to factors
+my.df <- read.csv("lec7.csv", as.is=FALSE)
+
+## Show the first few cases
+summary(my.df)
+```
+
+```{r}
+## Data are balanced
+xtabs(~x, data=my.df)
+
+## Show the levels
+## "Conventional" is the reference group
+levels(my.df$x)
+
+## Show the default contrast
+contrasts(my.df$x)
+
+## Boxplot of the data
+boxplot(y~x, data=my.df, main="Teaching methods")
+
+## If we want to reorder the levels, we may use:
+my.df$x <- factor(my.df$x, levels=c("Large class", "Conventional", "Small class"))
+```
+
+```{r}
+library(car)
+
+## One-way ANOVA
+fit1 <- lm(y~x, data=my.df)
+
+## Summary
+summary(fit1)
+
+## ANOVA table for type 2
+Anova(fit1, type=2)
+
+## For type 3 ANOVA, need to respecify the model
+fit5 <- lm(y~x*z, data=my.df2, contrasts=list(x=contr.sum, z=contr.sum))
+Anova(fit5, type=3)
+
+## Post-hoc analyses
+testInteractions(fit1, pairwise="x")
+
+## Plot the effect sizes
+plot(allEffects(fit1), ask=FALSE)
+```
+
+### Two-way ANOVA (fully between)
+
+```{r}
+## Interaction effect
+fit3 <- lm(y~x*z, data=my.df)
+
+## ANOVA type 2
+## If interaction is significant, probably better to use type 3 SS. Otherwise, you can use Type II.
+Anova(fit3, type=2)
+
+## ANOVA type 3 to get same output in SPSS
+fit5 <- lm(y~x*z, data=my.df2, contrasts=list(x=contr.sum, z=contr.sum))
+Anova(fit5, type=3)
+
+## Summary
+summary(fit3)
+
+## Effect sizes
+omega_sq(fit3)
+
+## Post-hoc analyses, decompose the interaction in either way
+testInteractions(fit3, pairwise="x", fixed="z")
+testInteractions(fit3, pairwise="z", fixed="x")
+```
+
+## ANCOVA
+
+Additional requirements in ANCOVA:
+
+    Linearity
+        A linear relationship between the covariates and the DV;
+        If the relationship is nonlinear, ANCOVA is not appropriate.
+    Homogeneity of regression slopes (i.e. no interaction)
+        The slopes of the regression line are the same in all groups;
+        If there is an interaction, ANCOVA is not appropriate.
+    Reliability of the covariates
+        The covariates are measured without error;
+        In non-experimental settings, unreliable covariates may lead to biased treatment effects;
+        Limit the covariates which can be measured reliably (e.g., rxx’ > 0.8).
+
+```{r}
+## This syntax is important if you want to use the Type III sum of squares (SS).
+## options(contrasts=c(unordered="contr.sum", ordered="contr.poly"))
+
+## Alternative syntax if you have not set the above "options."
+## my.fit1 <- lm(y ~ group*x, data=my.df, contrasts=list(group=contr.sum))
+
+## lm() conducts a linear model
+## Use a different contrast
+
+## We assume x is a covariate.
+
+my.fit1 <- lm(y ~ group*x, data=my.df1)
+
+summary(my.fit1)
+
+## If interaction is not significant, we can fit the model without the interaction using type II SS
+## Type 2 SS using the Anova() in the "car" library
+Anova(my.fit1, type=2)
+```
+
+```{r}
+## The interaction is not significant. We may fit the model without the interaction.
+
+my.fit2 <- lm(y ~ group+x, data=my.df1)
+
+Anova(my.fit2, type=2)
+```
+
+If the interaction is significant, we cannot use ANCOVA. One way is to use J-N procedure for a region in which the interaction is non-significant, but not covered here.
+
+
+
+## MANOVA
+
+The power of MANOVA depends on both the means and the correlations of the variables:
+
+    The correlations among the DVs, that are ignored in the univariate tests, can increase the power of MANOVA (Cole et al., 1994).
+    The correlations and means of the variables will also affect the power of MANOVA.
+    Although each univariate test is not significant, the multivariate test based on all DVs simultaneously can be significant (and vice versa).
+
+### One-sample Hotelling's T2 test
+
+```{r}
+my.df2 <- read.csv("lec8c.csv")
+
+## Sample means
+apply(my.df2, 2, mean)
+## Round the means and apply them to the Hotelling's test
+
+## Library to conduct Hotellings T2 test
+library(ICSNP)
+
+## mu: population means for H0
+HotellingsT2(my.df2, mu=c(4,50,10))
+
+```
+
+### Two-Group MANOVA
+
+Is the overall MANOVA statistically significant?
+
+    Yes: Calculate the effect size and conduct t-test on each DV by controlling the familywise Type I error.
+    No: Stop and conclude that there is no evidence to reject H0.
+
+
+```{r}
+## Read the data set with header
+my.df3 <- read.csv("lec8d.csv")
+
+## Show the first few cases
+head(my.df3)
+
+scatterplotMatrix( ~accuracy + satisfaction + confidence | group, data=my.df3, regLine=FALSE,
+                    ellipse=TRUE, smooth=FALSE, by.groups=TRUE)
+
+par(mfrow=c(1,3))
+for (response in c("accuracy", "satisfaction", "confidence"))
+  boxplot(my.df3[, response]~group, data=my.df3, ylab=response)  
+```
+
+There are several test statistics in MANOVA.
+All of them are the same when there are only 2 groups.
+
+```{r}
+fit.1 <- lm(cbind(accuracy,satisfaction,confidence)~group, data=my.df3)
+## This will automatically provide the multivariate test
+summary( Anova(fit.1, type=2) )
+
+## Univariate tests without Anova()
+summary(fit.1)
+```
+
+### MANOVA with k groups (k > 2)
+
+If group sizes are more or less equal, tests are sufficiently robust with respect to the heterogeneity of covariance matrices except for Roy’s largest root.
+
+Roy’s largest root is generally not recommended.
+
+In general, Pillai’s trace is the best choice but Wilk’s Lambda is not far behind except when there is severe heterogeneity of covariance matrices.
+
+With certain combinations of k groups and p variables, use Wilk’s Lambda because the test is exact.
+
+```{r}
+## Show the summary of the data
+summary(my.df)
+
+aggregate(cbind(accuracy, satisfaction, confidence)~group, data=my.df, FUN=mean)
+aggregate(cbind(accuracy, satisfaction, confidence)~group, data=my.df, FUN=sd)
+```
+
+```{r}
+fit1 <- lm(cbind(accuracy,satisfaction,confidence)~group, data=my.df)
+summary( Anova(fit1) )
+
+## Plot the mean differences
+library(effects)
+plot(allEffects(fit1), ask=FALSE)
+
+## Eta2 effect size, copy from Lambda (Wilk's)
+Lambda <- 0.12345
+( Eta2 <- 1-Lambda )
+```
+
+### Post-hoc in MANOVA
+
+See lec9 for details. We can split by DV (examine the overall effect of group on each DV), then do further posthoc.
+
+```{r}
+## ANOVA on each dependent variable
+summary(fit1)
+
+## Use the aov() function to isolate significant DVs
+fit.sat <- aov(satisfaction~group, data=my.df)
+( Tukey.sat <- TukeyHSD(fit.sat) )
+```
+
+Or by group (examine differences on overall MANOVA DV per pairwise group comparison).
+
+```{r}
+## Select data from the control and treatment1 (example) to conduct a MANOVA
+fit2 <- lm(cbind(accuracy,satisfaction,confidence)~group, data=my.df,
+           subset=(group %in% c("control","treatment1")))
+
+summary( Anova(fit2) )
+```
+
+We can also do contrast analysis.
+
+```{r}
+# Helmert contrast: each group with the average of the other groups. 
+
+## Convert group (string) to factor
+my.df$group <- factor(my.df$group)
+
+## Show the levels of "group"
+levels(my.df$group)
+
+## Before the assignment
+contrasts(my.df$group)
+
+## Helmert contrasts
+## We may add labels to these contrasts to make them easier to read
+K <- cbind("Control vs. average of treatments"=c(1, -0.5, -0.5),
+           "Treatment 1 vs. treatment 2"=c(0, 1,-1))
+## Show the contrast
+K
+
+## Assign the contrasts
+contrasts(my.df$group) <- K
+
+## After the assignment
+contrasts(my.df$group)
+```
+
+```{r}
+## Overall MANOVA - we conventionally conduct a MANOVA before multivariate contrasts, although some researchers say we don't need.
+fit.3 <- lm(cbind(accuracy, satisfaction, confidence)~group, data=my.df)
+summary( Anova(fit.3) )
+
+## Control vs. average of treatments (first multivariate contrast)
+## c(0,1,0): the first 0 tests the intercept which is always 0. "1,0" means testing the first contrast
+linearHypothesis(fit.3, c(0,1,0))
+
+## treatment 1 vs. treatment 2
+## c(0,0,1): the first 0 tests the intercept which is always 0. "0,1" means testing the second contrast
+linearHypothesis(fit.3, c(0,0,1))
+
+## Univariate contrasts
+## We have to manually apply the Bonferroni corrections
+summary(fit.3)
+```
+
+
+## Discriminant Analysis
+
+Mathematically, discriminant analysis is the same as a MANOVA. Given a battery of DVs, can we classify groups?
+
+```{r}
+my.data <- read.csv("lec2.csv")
+tail(my.data)
+
+## Select the data without NA in STATUS
+my.df <- subset(my.data, subset=!is.na(STATUS))
+table(my.df$STATUS)
+
+library(car)
+
+scatterplotMatrix( ~MATHS+LANG+ARTS | STATUS, data=my.df,  
+                   ellipse=TRUE, smooth=FALSE, by.groups=TRUE)
+
+```
+
+The lda() function is used to conduct a linear discriminant analysis. The prior argument can be used to set the prior probabilities.
+
+The maximum no. of discriminant function is min(3-1,3)=2. 
+
+    The first discriminant function, which discriminates the (social sciences and working) vs. pure sciences, is high in lang and arts and low in maths. Thus, pure science students tend to be higher in maths and lower in lang and arts.
+    The second discriminant function, which discriminates the social sciences vs. working, is high in arts and low in lang. Thus, social science students tend to be higher in lang and lower in arts.
+    The proportion of trace shows that 83.37% of the between-group variance is on the first discriminant function.
+
+
+```{r}
+## Library for lda()
+library(MASS)
+  
+## prior=c(1/3,1/3,1/3): assuming all groups are equally likely.
+my.fit1 <- lda(STATUS~MATHS+LANG+ARTS, data=my.df, prior=c(1/3,1/3,1/3))
+
+## Show the results
+my.fit1
+
+## Calculate the predicted probabilities
+my.pred <- predict(my.fit1)
+
+## Let's check what is inside my.pred
+str(my.pred)
+
+## Posterior probabilities
+head(my.pred$posterior)
+
+## Discriminant scores for individuals
+head(my.pred$x)
+```
+
+Refer to PL5222 Lec2 for further notes.
+
+
+
+# Repeated Measures
+
+## Shaping to long format
+
+```{r}
+my_long.df <- reshape(as.data.frame(my.df), idvar="id", direction="long", varying=list(
+  c("Ingroup_pun", "Outgroup_pun")),
+ # c("Ingroup_pun", "Outgroup_pun")),
+ # c("Ingroup_pun", "Outgroup_pun")),
+  
+  v.names=c("pun"), times=c("Ingroup", "Outgroup"), timevar="time")
+```
+
+## For separate cluster-level data
+
+```{r}
+cluster.df <- read_excel("cluster_indicators.xlsx")
+
+# If you are going to mean-center anything, do it before merging the datasets.
+
+my_long2.df <- merge(my_long2.df, cluster.df, by="cluster_id")
+```
+
+## Within-subjects ANOVA
+
+Mauchly sphericity test is very sensitive to departures from multivariate normality, so it is generally not recommended.
+
+There's a univariate versus multivariate approach (see Lecture 10).
+
+If sphericity assumption holds, a univariate approach is usually better. If it doesn't, it's hard to compare univariate versus multivariate approach.
+
+Greenhouse and Geisser: too conservative
+Huynh and Feldt: a bit liberal
+
+Recommended approach (see Cardinal & Aitken, 2006)
+
+above 0.75 : H-F adjustment
+
+below 0.75 : G-G adjustment
+
+```{r}
+## Convert "wide" format to "long" format
+## An alternative option: varying=list(1:3) which indicates variables 1:3 are varying
+## v.names="test": "test" will be the variable name
+my.df.long <- reshape(my.df, varying=c("Pre_test", "Post_test", "Follow_up"), 
+                      v.names="test", direction="long")
+
+## Show the first few cases
+head(my.df.long)
+
+with(my.df.long, interaction.plot(x.factor=time, trace.factor=group, response=test))
+```
+
+```{r}
+## Create a within-factor called "session"
+session <- ordered(c("Pre_test", "Post_test", "Follow_up"),
+                     levels=c("Pre_test", "Post_test", "Follow_up"))
+session
+
+## Create a repeated contrasts for session
+## By default, the elements are arranged by column major.
+## We may use the row major by using the byrow=TRUE argument.
+( contrasts(session) <- matrix(c(-1, 0,
+                                  1, -1,
+                                  0, 1), ncol=2, byrow=TRUE) )
+
+idata <- data.frame(session)
+idata
+```
+
+### Univariate approach
+
+```{r}
+library(car)
+
+## Assuming mixed ANOVA, with session as within-subjects factor and group as between-subjects factor.
+
+## Run a repeated measures without the between group-factor
+my.fit1 <- lm(cbind(Pre_test, Post_test, Follow_up)~1, data=my.df)
+
+## Include within factor: session
+my.repeat1 <- Anova(my.fit1, idata=idata, idesign=~session)
+
+## Request the univariate approach by specifying "multivariate=FALSE"
+summary(my.repeat1, multivariate=FALSE)
+```
+
+### Multivariate approach
+
+```{r}
+summary(my.repeat1, univariate=FALSE, test.statistic="Wilks")
+```
+
+### With between-factor (i.e. mixed ANOVA)
+
+```{r}
+## Run a repeated measures with a between group factor
+my.fit2 <- lm(cbind(Pre_test, Post_test, Follow_up)~group, data=my.df)
+
+## Include within factor: session
+my.repeat2 <- Anova(my.fit2, idata=idata, idesign=~session, test.statistic="Wilks")
+
+## my.repeat2 for the simplified output
+## Univariate approach
+summary(my.repeat2, multivariate=FALSE)
+
+## Simplified output
+my.repeat2
+```
+
+
+
+## Multilevel modelling
+
+For multi-level modelling, it is always important to first obtain your research questions.
+1. Do you want means-as-outcomes regression (level 2 effects)? E.g. do schools with higher mean SES also have higher math achievement?
+
+### Creating aggregated data
+
+```{r}
+## Create aggregated means by ID (or your clustering variable)
+my.level2 <- aggregate(my.df[, c("mathach", "ses")], by=list(my.df$ID), FUN=mean)
+
+my.temp <- my.level2[, c(1,3)]
+head(my.temp)
+
+## Rename "ses" to "meanSES" as a level-2 variable
+names(my.temp) <- c("ID", "meanSES")
+head(my.temp)
+
+## Center my.temp$meanSES
+## You must center at the level 2 dataset. You cannot center this later on.
+my.temp$meanSES <- scale(my.temp$meanSES, scale=FALSE)
+mean(my.temp$meanSES)
+
+## Merge the meanSES with individual data
+## Since both data sets has the same ID, they will be merged according to the ID.
+my.df2 <- merge(my.df, my.temp)
+head(my.df2)
+```
+
+### Comparing nested models
+
+Usually we can compare between different models. 
+
+```{r}
+# Intercept-only model (Baseline)
+library(nlme)               
+
+my.lme0 <- lme(mathach~1, random=~1|ID, method="ML", data=my.df)
+summary(my.lme0)
+
+## Easier to extract the variance-covariance of the random-effects
+VarCorr(my.lme0)
+```
+
+```{r}
+# Model with meanSES (level 2 variable) predicting the intercept (or mean) of the level 1 mathach variable
+## This type of model is also known as "means-as-regression", whereby a level 2 variable predicts a level 1 variable's intercept.
+my.lme1 <- lme(mathach~meanSES, random=~1|ID, method="ML", data=my.df2)
+summary(my.lme1)
+```
+
+We use a likelihood ratio (LR) statistic to compare nested models. We typically pick the model that is the best (i.e. a model that has a significant chi-square). If no chi-square tests are significant, then we pick the most parsimonious model.
+
+```{r}
+## Compare nested models by the likelihood ratio test
+anova(my.lme1, my.lme0)
+```
+
+### Random-coefficient models
+
+    Research questions related to level 2 only: Means-as-outcomes regression
+    Research questions related to levels 1 and 2: Random-coefficient model and Intercepts- and slopes-as-outcomes model
+    Random-coefficient model:
+        On average, does SES relate to MathAch at the student level?
+        Is the relationship between SES and MathAch at the student level stronger in some schools than in others?
+        Do schools with high mean MathAch (intercepts) have a stronger association between SES and MathAch (slopes)?
+        
+Three common options in multilevel modeling for level-1 variables.
+
+    Uncentering. It is used when the independent variables are objective measures in which the zero point is meaningful.
+    Grand-mean centering. The model fit and test statistics are the same as those in the model with uncentered variables. It is used when the level-1 variables are assumed the same across schools. This is usually preferred to the uncentering method.
+    Group-mean centering. The effect of SES on MathAch is relative to the group. It can be used to test the big-fish-little-pond effect or big-fish-big-pond effect in educational settings (e.g., Marsh & Hau, 2003). In our example, we use this centering method.
+
+
+```{r}
+## Random intercept and random slopes model; uncentered
+
+my.lme1 <- lme(mathach~1+ses, random=~1+ses|ID, method="ML", data=my.df2)
+summary(my.lme1)
+
+## Grand-mean centering; generally equivalent to uncentered
+
+my.lme2 <- lme(mathach~1 + I(ses-mean(ses)), random=~1 + I(ses-mean(ses))|ID, method="ML", data=my.df2)
+summary(my.lme2)
+
+## Variance component of the random effects
+VarCorr(my.lme2)
+```
+
+### Intercepts- and slopes-as-outcomes model
+
+```{r}
+## I(ses-meanSES)*meanSES: I(ses-meanSES) + meanSES + I(ses-meanSES):meanSES
+## This is also group mean centered! Notice mean(ses) versus meanSES in the I() calculation.
+
+my.lme4 <- lme(mathach~1 + I(ses-meanSES)*meanSES + I(ses-meanSES)*sector,
+               random=~1 + I(ses-meanSES)|ID, method="ML", data=my.df2)
+summary(my.lme4)  
+
+## Variance component of the random effects
+VarCorr(my.lme4)
+
+```
+
+We can also plot the cross-level interactions.
+
+```{r}
+library(effects)
+
+## The effects package does not work with I().
+## We need to create the group-mean centered variable on ses manually.
+my.df2$ses <- with(my.df2, ses-meanSES)
+my.lme4 <- lme(mathach~1 + ses*meanSES + ses*sector,
+               random=~1 + ses|ID, method="ML", data=my.df2)
+summary(my.lme4)  
+
+## Plot the interation between ses and sector
+plot(effect("ses:sector", my.lme4))
+```
+
+```{r}
+## Create the effects object with the ses levels from -3 to 3
+sesSector <- allEffects(my.lme4, xlevels=list(ses=seq(-3, 3, by=0.5)))
+
+## Plot the interaction ses:sector
+plot(sesSector, 'ses:sector', multiline=TRUE, ylab="mathach")
+```
+
+```{r}
+### For plotting continuous moderators
+
+## Get the mean and sd of meanSES (not the ses at individual level)
+mean.ses <- round( mean(my.level2$meanSES), 4 )
+## Round it up to 4 decimal places
+mean.ses
+
+sd.ses <- round( sd(my.level2$meanSES), 4 )
+sd.ses
+
+plot(effect("ses*meanSES", xlevels=list(meanSES=c(mean.ses-sd.ses, mean.ses, mean.ses+sd.ses)),
+            my.lme4))
+
+## Set the values for ses and meanSES
+sesMeanSES <- allEffects(my.lme4, xlevels=list(ses=seq(-3, 3, by=0.5), 
+                                               meanSES=c(mean.ses-sd.ses, mean.ses, mean.ses+sd.ses)))
+plot(sesMeanSES, 'ses:meanSES', multiline=TRUE, ylab="mathach")
+```
+
+### Comparing non-nested models.
+
+Comparing non-nested models
+
+    When the models being compared are non-nested, likelihood ratio test is not appropriate.
+    Akaike information criterion (AIC) or Schwarz’s Bayesian information criterion (BIC) may be used.
+    A smaller value indicates that the model fits better in compromising between the model fit and the model complexity.
+    Choose the model with the smallest AIC or BIC.
+
+Sample size requirement (rules of thumb)
+
+    General: 30 groups with at least 30 individuals per group
+    Cross-level interactions: 50 groups with 20 individuals per group
+    Variance components: 100 groups with 10 individuals per group
+
+Strategies on analyzing multilevel data
+
+    Multilevel data are more complicated than single-level data.
+    Multilevel models usually require more assumptions than ordinary regression.
+    It is suggested that analyses are based on theories rather than trials-and-errors.
+
+
+
+
+
+### Longitudinal studies
+
+```{r}
+my.df <- read.csv("lec7.csv", header=TRUE)
+
+## Wide format
+head(my.df)
+
+## Calculate the means
+my.mean <- apply(my.df[,2:5],2,mean)
+
+## Plot the trend
+plot(x=0:3, y=my.mean, type="b", xlab="Time", ylab="Antisocial behavior",
+     main="Mean antisocial scores over time", ylim=c(1, 2.5))
+
+```
+
+```{r}
+my.long <- reshape(my.df, idvar="subjID", direction="long",
+                   varying=list(c("anti0","anti1","anti2","anti3"),
+                                c("read0","read1","read2","read3")),
+                   v.names=c("anti","read"), times=0:3)
+
+## Long format
+head(my.long)
+```
+
+In a longitudinal model, how you center time changes the interpretation of the intercept-as-outcomes model. All the effects will generally be for time = 0, so if post-test is set to 0 (e.g. -1, 0, 1), then the effect of your predictors will be specific to the post-test period.
+
+
+    Time= 0, 1, 2 and 3 for convenience.
+        We may use different coding to adjust for non-equal spacing.
+        Time = 0, 1, 3, 6 for Now, 1 month later, 3 months later and 6 months later
+    The coding may affect the results and their interpretations:
+        Time = 0, 1, 2, 3
+        Time = -3, -2, -1, 0
+    Time should not be centered.
+
+
+```{r}
+# Intercept-only model
+
+my.lme0 <- lme(anti~1, random=~1|subjID, method="ML", data=my.long)
+summary(my.lme0)
+
+# Linear growth model (random slope for time, time also added into equation)
+
+my.lme1 <- lme(anti~1+time, random=~1+time|subjID, method="ML", data=my.long)
+summary(my.lme1)
+
+## Easier to extract the variance component
+VarCorr(my.lme1)
+
+### Correlations between intercepts and slopes can be interpreted as well!
+```
+
+```{r}
+# Level 2 time-invariant predictors and cross-level interactions
+
+## Create a variable (female) with 0 and 1 
+my.long$female <- with(my.long, ifelse(gender=="female", yes=1, no=0))
+
+## Center both female and cog
+my.lme3 <- lme(anti~1 + time*scale(female, scale=FALSE) + time*scale(cog, scale=FALSE),
+               random=~1+time|subjID, method="ML", data=my.long)
+summary(my.lme3)
+
+```
+
+```{r}
+## Plotting the cross-level interactions
+
+## Get the parameter estimates from the analysis
+my.coef <- fixef(my.lme3)
+
+## Time for x
+x <- 0:3
+
+## Unique values for female and male
+female <- unique( scale(my.long$female, scale=FALSE) )
+
+## y for male
+y.male <- my.coef["(Intercept)"] + my.coef["scale(female, scale = FALSE)"]*female[1] + 
+                 (my.coef["time"]+my.coef["time:scale(female, scale = FALSE)"]*female[1])*x
+ 
+## y for female
+y.female <- my.coef["(Intercept)"] + my.coef["scale(female, scale = FALSE)"]*female[2] + 
+                   (my.coef["time"]+my.coef["time:scale(female, scale = FALSE)"]*female[2])*x
+    
+## Plot female data
+plot(x,y.female, type="b",ylim=c(0.5,3),col="red",xlab="Time",pch=3,
+     ylab="Antisocial Behavior", main="Effect of Gender")
+
+## Add male data
+points(x,y.male,type="b",col="blue",pch=5)
+
+## Add a legend
+legend(2,1,c("Male","Female"),col=c("blue", "red"),pch=c(5,3))
+
+```
+
+```{r}
+#### Figure for cognitive support or other continuous moderators
+
+## SD of cog
+cog.sd <- sd(c(my.long$cog))
+
+## Use -SD, mean, SD
+cog <- c(-cog.sd, 0, cog.sd)
+
+## y for -SD
+y.neg1sd <- my.coef["(Intercept)"] + my.coef["scale(cog, scale = FALSE)"]*cog[1] + 
+                  (my.coef["time"]+my.coef["time:scale(cog, scale = FALSE)"]*cog[1])*x
+
+## y for mean
+y.mean <- my.coef["(Intercept)"] + my.coef["scale(cog, scale = FALSE)"]*cog[2] + 
+                  (my.coef["time"]+my.coef["time:scale(cog, scale = FALSE)"]*cog[2])*x
+
+## y for SD
+y.pos1sd <- my.coef["(Intercept)"] + my.coef["scale(cog, scale = FALSE)"]*cog[3] + 
+                  (my.coef["time"]+my.coef["time:scale(cog, scale = FALSE)"]*cog[3])*x
+
+## Plot -SD data
+plot(x,y.neg1sd,type="b",ylim=c(0.5,3),col="red",xlab="Time",pch=3,
+     ylab="Antisocial Behavior", main="Effect of cognitive support")
+
+## Add mean data
+points(x,y.mean,type="b",col="black",pch=5)
+
+## Add SD data
+points(x,y.pos1sd,type="b",col="blue",pch=15)
+
+## Add a legend
+legend(2,1.2,lwd=1,c("-1SD of Cog","Mean of Cog","+1SD of Cog"),
+       col=c("red","black","blue"),pch=c(3,5,15))
+
+```
+
+### Multilevel vs Within-ANOVA with lme4
+
+We generally don't have enough power to include random slopes, but you can try if you want.
+
+```{r}
+## Convert "wide" format to "long" format
+## varying=list(1:3): variables 1:3 are varying variables
+## v.names="test": "test" will be the variable name
+my.long <- reshape(my.wide, varying=list(1:3), v.names="y", idvar="subjID",
+                   times=c("Pre_test", "Post_test", "Follow_up"), direction="long")
+
+## Convert time into a factor, which is required in plotting the figures
+my.long$time <- factor(my.long$time, levels=c("Pre_test", "Post_test", "Follow_up"), ordered = TRUE)
+
+## Show the first few cases
+head(my.long)
+```
+
+```{r}
+## Model assuming an interaction between within- and between-effects.
+my.lme1 <- lmer(y~time*group+(1|subjID), REML=FALSE, data=my.long )
+summary(my.lme1)
+```
+
+```{r}
+Anova(my.lme1)
+```
+
+```{r}
+## Separate plots
+plot(allEffects(my.lme1), ask=FALSE)
+```
+
+We can also test the simple effects.
+
+```{r}
+## Library for contrast analysis
+library(phia)
+
+## Compare different levels of time by conditioning on the levels of the group
+testInteractions(my.lme1, pairwise="time", fixed="group")
+
+## Compare different levels of group by conditioning on the levels of the time
+testInteractions(my.lme1, pairwise="group", fixed="time")
+```
+
+If the interaction is not significant, we can also just interpret a model with just main effects.
+
+```{r}
+## Model assuming no interaction between within- and between-effects.
+my.lme0 <- lmer(y~time+group+(1|subjID), REML=FALSE, data=my.long )
+summary(my.lme0)
+```
+
+```{r}
+Anova(my.lme0)
+testInteractions(my.lme0, pairwise="time")
+
+## An alternative approach
+library(multcomp)
+
+summary(glht(my.lme0, mcp(time="Tukey")))
+
+plot(allEffects(my.lme0), ask=FALSE)
+```
+
+If there is cross-classification, you must use lme4. The syntax is identical.
+
+
+
+# EFA
+
+It is suggested that the subject/variable ratio should be at least 10. 
+
+## KMO and Bartlett's test
+
+Bartlett’s test of sphericity: If it is not rejected, dataset is not appropriate for EFA.
+ALso if KMO is <.5, no need for EFA either.
+
+```{r}
+## Library for EFA
+library("psych")
+## Library for Bartlett's test of sphericity and KMO 
+library("rela")
+## Library for correlation plot
+library("corrplot")
+
+my.df1 <- read.csv("lec4a.csv")
+
+KMO(efa.df_complete)
+bartlett.test(efa.df_complete)
+```
+
+## Scree plots
+
+```{r}
+# Cattell’s (1966) scree plot: keep factors before a steep slope drop-off.
+
+par(mfrow=c(1,2))       ## Prepare plotting area for two plots
+scree(my.df1, factors=FALSE, main="Scree plot for my.df1")
+scree(my.df2, factors=FALSE, main="Scree plot for my.df2")
+```
+
+## EFA Code
+
+* Communality (h2 in the psych package) is the percentage of the variance of a variable that can be accounted for by all common factors in the model.
+* Uniqueness (u2 in the psych package; u2=1-h2) is the percentage of the variance of a variable that cannot be accounted for by the common factors, that is, error or unique factor.
+* If the communality of an item is too low, it suggests that:
+  ** More factors may be required;
+  ** This item does not belong to the scale.
+  
+* When the RMSEA is smaller than 0.05, the model is considered good.
+
+```{r}
+# We can specify fm="ml", which provides a significance test to test the proposed model to assume multivariate normality. We prefer this test to be non-significant.
+# Another popular method is the principal factor solution "fm=pa"
+# Use varimax if the correlations between factors is low (generally r < .3). Otherwise, use oblimin.
+
+
+( fa2 <- fa(my.df2, nfactors=2, fm="ml", rotate="varimax") ) 
+
+fa.diagram(fa3, cut=0)
+
+print( fa3$loadings, cut=0 )
+
+print( fa3$Structure, cut=0 )
+```
+
+We can also display the pattern matrix (factor loadings).
+
+```{r}
+fs <- factor.scores(x=my.df3, f=fa4, method="Bartlett")
+
+## Show the first few cases
+head(fs$scores)
+```
+
+
+# CFA/SEM
+
+## CFA
+```{r}
+cfa.model <- ' FBP  =~ W1_FBP1 + W1_FBP2 + W1_FBP3 + W1_FBP4 + W1_FBP5
+              SE =~ W1_SE1 + W1_SE2 + W1_SE3 + W1_SE4 + W1_SE5 + W1_SE6 + W1_SE7 + W1_SE8 + W1_SE9
+              SR   =~ W1_SR1 + W1_SR2 + W1_SR3 + W1_SR4 + W1_SR5 + W1_SR6 + W1_SR7 + W1_SR8 + W1_SR9 + W1_SR10 + W1_SR11 + W1_SR12'
+
+cfa_fit <- cfa(cfa.model, data=writing, missing = "ML")
+summary(cfa_fit, fit.measures=TRUE, standardized=TRUE)
+
+semPlot::semPaths(cfa_fit, whatLabels = "standardized", residuals = FALSE)
+```
+
+
+## SEM with CFA measurement model
+```{r}
+sem.model <- ' 
+#Measurement Model
+FBP =~ W1_FBP1 + W1_FBP2 + W1_FBP3 + W1_FBP4 + W1_FBP5
+SE =~ W1_SE1 + W1_SE2 + W1_SE3 + W1_SE4 + W1_SE5 + W1_SE6 + W1_SE7 + W1_SE8 + W1_SE9
+SR =~ W1_SR1 + W1_SR2 + W1_SR3 + W1_SR4 + W1_SR5 + W1_SR6 + W1_SR7 + W1_SR8 + W1_SR9 + W1_SR10 + W1_SR11 + W1_SR12
+
+#Structural Model
+SR ~ c*SE + b*FBP
+FBP ~ a*SE
+
+## indirect effect (a*b)
+ab := a*b
+## total effect
+total := c + ab
+
+'
+
+sem_fit <- sem(sem.model, data=writing, missing = "ml")
+summary(sem_fit, fit.measures=TRUE, standardized=TRUE)
+```
+
+```{r}
+## Takes very long, don't do more than 10 for demonstration purposes
+sem_fit_boot <- sem(sem.model, data = writing, se = "bootstrap", bootstrap = 10, missing = "ml")
+```
